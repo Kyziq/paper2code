@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { uploadFile } from "./api";
 
 const FileUpload: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
@@ -14,23 +15,11 @@ const FileUpload: React.FC = () => {
       return;
     }
 
-    const formData = new FormData();
-    formData.append("file", file);
-
     try {
-      const response = await fetch("http://localhost:3000/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        setMessage(result.message);
-      } else {
-        setMessage("File upload failed.");
-      }
+      const result = await uploadFile(file);
+      setMessage(result);
     } catch (error) {
-      setMessage("Error uploading file.");
+      setMessage((error as Error).message);
     }
   };
 
