@@ -1,5 +1,6 @@
 {
   "name": "paper2code",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "build": "turbo build",
@@ -8,12 +9,17 @@
     "format": "prettier --write \"**/*.{ts,tsx,md}\""
   },
   "devDependencies": {
-    "prettier": "^3.2.5",
-    "turbo": "^2.0.11",
-    "typescript": "^5.4.5"
+    "prettier": "^3.3.3",
+    "turbo": "^2.0.12",
+    "typescript": "^5.5.4"
   },
-  "packageManager": "pnpm@8.15.6",
+  "packageManager": "bun@1.1.21",
   "engines": {
-    "node": ">=18"
-  }
+    "node": ">=18",
+    "bun": ">=1.0.0"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
 }
