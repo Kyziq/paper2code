@@ -1,11 +1,12 @@
-import { createLazyFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useDropzone } from "react-dropzone";
-import { uploadFile } from "../api";
+import { useMutation } from "@tanstack/react-query";
+import { createLazyFileRoute } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import Console from "@/components/console";
+import { uploadFile } from "../api";
 import { toast } from "sonner";
 import { Upload } from "lucide-react";
 
@@ -14,9 +15,25 @@ export const Route = createLazyFileRoute("/")({
 });
 
 function Index() {
+  // For managing server state
+  // const queryClient = useQueryClient();
+
   const [file, setFile] = useState<File | null>(null);
   const [language, setLanguage] = useState<string | null>(null);
   const [message, setMessage] = useState<string>("");
+
+  const { mutate, isPending } = useMutation({
+    mutationFn: (data: { file: File; language: string }) => uploadFile(data.file, data.language),
+    onSuccess: (result) => {
+      setMessage(result);
+      toast.success("File uploaded successfully.");
+    },
+    onError: (error) => {
+      const errorMessage = (error as Error).message;
+      setMessage(errorMessage);
+      toast.error(errorMessage);
+    },
+  });
 
   const onDrop = (acceptedFiles: File[]) => {
     setFile(acceptedFiles[0]);
@@ -29,25 +46,10 @@ function Index() {
   });
 
   const handleUpload = async () => {
-    if (!language) {
-      toast.error("Please select a language.");
-      return;
-    }
+    if (!language) return toast.error("Please select a language.");
+    if (!file) return toast.error("Please select a file.");
 
-    if (!file) {
-      toast.error("Please select a file.");
-      return;
-    }
-
-    try {
-      const result = await uploadFile(file, language);
-      toast.success("File uploaded successfully.");
-      setMessage(result);
-    } catch (error) {
-      const errorMessage = (error as Error).message;
-      setMessage(errorMessage);
-      toast.error(errorMessage);
-    }
+    mutate({ file, language });
   };
 
   return (
@@ -75,13 +77,13 @@ function Index() {
             {file ? <p className="text-gray-700">{file.name}</p> : <p className="text-gray-500">Drag 'n' drop your code file here, or click to select one</p>}
           </div>
           <div className="flex justify-end mt-6">
-            <Button onClick={handleUpload}>
-              <Upload className="mr-2 h-4 w-4" /> Upload
+            <Button onClick={handleUpload} disabled={isPending}>
+              <Upload className="mr-2 h-4 w-4" /> {isPending ? "Uploading..." : "Upload"}
             </Button>
           </div>
         </div>
         <div className="md:w-1/2 p-6 flex flex-col justify-center items-center ">
-          <Console message={message} />
+          <Console message={isPending ? "Executing..." : message} />
         </div>
       </div>
     </div>
