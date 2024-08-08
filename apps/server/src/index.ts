@@ -39,6 +39,12 @@ app.post(
         return { message: "No file uploaded" };
       }
 
+      // Check file type
+      const fileExtension = path.extname(file.name).toLowerCase();
+      if (fileExtension !== ".py") {
+        return { message: "Only Python (.py) files are allowed" };
+      }
+
       // Save the uploaded file to the upload directory
       const filePath = path.resolve(uploadDir, file.name);
       const arrayBuffer = await file.arrayBuffer();
