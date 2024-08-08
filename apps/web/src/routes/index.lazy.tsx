@@ -9,6 +9,7 @@ import Console from "@/components/console";
 import { uploadFile } from "../api";
 import { toast } from "sonner";
 import { Upload } from "lucide-react";
+import { UploadFileParams } from "../types";
 
 export const Route = createLazyFileRoute("/")({
   component: Index,
@@ -23,9 +24,9 @@ function Index() {
   const [message, setMessage] = useState<string>("");
 
   const { mutate, isPending } = useMutation({
-    mutationFn: (data: { file: File; language: string }) => uploadFile(data.file, data.language),
+    mutationFn: (data: UploadFileParams) => uploadFile(data),
     onSuccess: (result) => {
-      setMessage(result);
+      setMessage(result.message);
       toast.success("File uploaded successfully.");
     },
     onError: (error) => {
@@ -48,7 +49,6 @@ function Index() {
   const handleUpload = async () => {
     if (!language) return toast.error("Please select a language.");
     if (!file) return toast.error("Please select a file.");
-
     mutate({ file, language });
   };
 
