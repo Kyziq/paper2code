@@ -3,6 +3,7 @@ import { useDropzone } from "react-dropzone";
 import { uploadFile } from "./api";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { Upload } from "lucide-react";
 
 export const FileUpload = () => {
@@ -40,18 +41,22 @@ export const FileUpload = () => {
   };
 
   return (
-    <div className="flex items-center justify-center">
-      <div className="flex flex-col md:flex-row w-full h-full">
-        <div className="md:w-1/2 p-6 flex flex-col ">
-          <h1 className="text-3xl font-bold text-gray-800 mb-4">Paper2Code</h1>
+    <div className="flex items-center justify-center min-h-screen bg-gray-100">
+      <div className="flex flex-col md:flex-row w-full max-w-4xl h-full bg-white shadow-lg rounded-lg">
+        <div className="md:w-1/2 p-6 flex flex-col">
+          <h1 className="text-3xl font-bold text-gray-800 mb-4">paper2code</h1>
           <p className="text-gray-600 mb-6">Upload your code and get insights instantly.</p>
           <div className="mb-6">
+            <Label htmlFor="language-select" className="block text-sm font-medium text-gray-700 mb-1">
+              Select programming language
+            </Label>
             <Select onValueChange={(value) => setLanguage(value)}>
-              <SelectTrigger className="w-[260px]">
+              <SelectTrigger id="language-select" className="w-[260px]">
                 <SelectValue placeholder="Select programming language..." />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="python">Python</SelectItem>
+                {/* TODO: more languages supported */}
               </SelectContent>
             </Select>
           </div>
@@ -64,9 +69,7 @@ export const FileUpload = () => {
               <Upload className="mr-2 h-4 w-4" /> Upload
             </Button>
           </div>
-          <p className="text-gray-500 mt-4"></p>
         </div>
-
         <div className="md:w-1/2 p-6 flex flex-col justify-center items-center bg-gray-50">
           <p className="text-gray-600">{message}</p>
         </div>
