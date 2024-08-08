@@ -1,13 +1,19 @@
+import { createLazyFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useDropzone } from "react-dropzone";
-import { uploadFile } from "./api";
+import { uploadFile } from "../api";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import Console from "@/components/console";
+import { toast } from "sonner";
 import { Upload } from "lucide-react";
 
-export const FileUpload = () => {
+export const Route = createLazyFileRoute("/")({
+  component: Index,
+});
+
+function Index() {
   const [file, setFile] = useState<File | null>(null);
   const [language, setLanguage] = useState<string | null>(null);
   const [message, setMessage] = useState<string>("");
@@ -24,20 +30,23 @@ export const FileUpload = () => {
 
   const handleUpload = async () => {
     if (!language) {
-      setMessage("Please select a programming language.");
+      toast.error("Please select a language.");
       return;
     }
 
     if (!file) {
-      setMessage("Please select a file.");
+      toast.error("Please select a file.");
       return;
     }
 
     try {
       const result = await uploadFile(file, language);
+      toast.success("File uploaded successfully.");
       setMessage(result);
     } catch (error) {
-      setMessage((error as Error).message);
+      const errorMessage = (error as Error).message;
+      setMessage(errorMessage);
+      toast.error(errorMessage);
     }
   };
 
@@ -77,6 +86,4 @@ export const FileUpload = () => {
       </div>
     </div>
   );
-};
-
-export default FileUpload;
+}
