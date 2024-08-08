@@ -31,7 +31,7 @@ const runDockerContainer = (filePath: string, fileName: string): Promise<string>
 
 // Define the /upload endpoint
 app.post(
-  "/upload",
+  "/api/upload",
   async ({ body }) => {
     try {
       const file = body.file[0];

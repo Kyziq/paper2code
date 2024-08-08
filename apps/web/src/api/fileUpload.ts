@@ -6,7 +6,11 @@ export const uploadFile = async (file: File, language: string): Promise<string> 
   formData.append("language", language);
 
   try {
-    const response = await axiosInstance.post("/upload", formData);
+    const response = await axiosInstance.post("/upload", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
     return response.data.message;
   } catch (error) {
     console.error("Error uploading file:", error);
