@@ -1,15 +1,17 @@
-import { useState } from "react";
 import { useDropzone } from "react-dropzone";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createLazyFileRoute } from "@tanstack/react-router";
+import { toast } from "sonner";
+import { Upload } from "lucide-react";
+
+import useStore from "@/stores/useStore";
+import { uploadFile, executeFile } from "@/api";
+import { UploadFileParams, UploadFileResponse } from "@/types";
+
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import Console from "@/components/console";
-import { uploadFile, executeFile } from "../api";
-import { toast } from "sonner";
-import { Upload } from "lucide-react";
-import { UploadFileParams, UploadFileResponse } from "../types";
 
 // Accepted file types for the dropzone
 // TODO: PDF support
@@ -23,9 +25,8 @@ export const Route = createLazyFileRoute("/")({
 });
 
 function Index() {
-  const [file, setFile] = useState<File | null>(null);
-  const [language, setLanguage] = useState<string | null>(null);
-  const [message, setMessage] = useState<string>("");
+  const { file, language, message, setFile, setLanguage, setMessage } = useStore();
+  const queryClient = useQueryClient();
 
   const uploadMutation = useMutation({
     mutationFn: (data: UploadFileParams) => uploadFile(data),
@@ -33,17 +34,20 @@ function Index() {
       setMessage(result.message);
       toast.success("File uploaded successfully. Proceeding to execution...");
       handleExecute(result.filePath); // Automatically trigger execution after upload
+      queryClient.invalidateQueries({ queryKey: ["fileStatus"] });
     },
     onError: (error: Error) => {
       setMessage(error.message);
       toast.error(error.message);
     },
   });
+
   const executeMutation = useMutation({
     mutationFn: (filePath: string) => executeFile(filePath),
     onSuccess: (result) => {
       setMessage(result.result);
       toast.success("File executed successfully.");
+      queryClient.invalidateQueries({ queryKey: ["executionResult"] });
     },
     onError: (error: Error) => {
       setMessage(error.message);
@@ -56,6 +60,7 @@ function Index() {
     if (!file) return toast.error("Please select a file.");
     uploadMutation.mutate({ file, language });
   };
+
   const handleExecute = (filePath: string) => {
     executeMutation.mutate(filePath);
   };
@@ -69,7 +74,6 @@ function Index() {
   const isUploadPending = uploadMutation.isPending;
   const isExecutePending = executeMutation.isPending;
   const isProcessing = isUploadPending || isExecutePending;
-
   const getConsoleMessage = () => {
     if (isUploadPending) return "Uploading file...";
     if (isExecutePending) return "Executing file...";
