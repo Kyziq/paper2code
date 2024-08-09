@@ -11,7 +11,8 @@ import { UploadFileParams, UploadFileResponse } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import Console from "@/components/console";
+import { Console } from "@/components/console";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 // Accepted file types for the dropzone
 // TODO: PDF support
@@ -81,55 +82,75 @@ function Index() {
   };
 
   return (
-    <div className="flex items-center justify-center">
-      <div className="flex flex-col md:flex-row w-full h-full">
-        {/* Left Section */}
-        <div className="md:w-1/2 p-6 flex flex-col ">
-          {/* Header */}
-          <h1 className="text-3xl font-bold text-gray-800 mb-4">paper2code</h1>
-          <p className="text-gray-600">Upload your handwritten code and get insights instantly.</p>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8">
+      <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden">
+        <div className="flex flex-col md:flex-row">
+          {/* Left Section */}
+          <div className="md:w-1/2 p-8 bg-white">
+            <h1 className="text-4xl font-extrabold text-gray-900 mb-2">paper2code</h1>
+            <p className="text-indigo-600 mb-8">Execute your handwritten code with ease.</p>
+            <div className="space-y-6">
+              <div>
+                <Label htmlFor="language-select" className="text-sm font-medium text-gray-700 mb-1">
+                  Programming Language
+                </Label>
+                <Select onValueChange={setLanguage} value={language || undefined}>
+                  <SelectTrigger id="language-select" className="w-[200px]">
+                    <SelectValue placeholder="Choose a language..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {LANGUAGES.map(({ value, label }) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-          {/* Language Selection */}
-          <div className="mt-6">
-            <Label htmlFor="language-select" className="block text-sm font-medium text-gray-700 mb-1 ">
-              Programming Language
-            </Label>
-            <Select onValueChange={setLanguage} value={language || undefined}>
-              <SelectTrigger id="language-select" className="w-[200px]">
-                <SelectValue placeholder="Choose a language..." />
-              </SelectTrigger>
-              <SelectContent>
-                {LANGUAGES.map(({ value, label }) => (
-                  <SelectItem key={value} value={value}>
-                    {label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* File Upload Section */}
-          <div className="mt-6">
-            <Label htmlFor="file-upload" className="block text-sm font-medium text-gray-700 mb-1">
-              Code File <span className="text-xs font-normal text-gray-500">(Accepted formats: .png, .jpg, .jpeg)</span>
-            </Label>
-            <div {...getRootProps()} className="border-2 border-dashed border-gray-300 p-10 text-center cursor-pointer w-full bg-gray-50 rounded-lg">
-              <input {...getInputProps()} />
-              {file ? <p className="text-gray-700">{file.name}</p> : <p className="text-gray-500">Drag 'n' drop your file here, or click to select one</p>}
+              {/* File Upload Section */}
+              <div>
+                <Label className="text-sm font-medium text-gray-700 mb-1">Code File</Label>
+                <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-indigo-500 transition-colors">
+                  <div {...getRootProps()} className="space-y-1 text-center">
+                    <input {...getInputProps()} />
+                    {file ? (
+                      <p className="text-gray-700">{file.name}</p>
+                    ) : (
+                      <div>
+                        <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+                          <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                        <div className="flex text-sm text-gray-600">
+                          <label className="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500">
+                            <span>Upload a file</span>
+                          </label>
+                          <p className="pl-1">or drag and drop</p>
+                        </div>
+                        <p className="text-xs text-gray-500">PNG, JPG, JPEG up to 10MB</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+              {/* Upload Button */}
+              <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white flex justify-center items-center" onClick={handleUpload} disabled={isProcessing}>
+                {isProcessing ? (
+                  <LoadingSpinner className="w-6 h-6 border-white border-t-indigo-600" />
+                ) : (
+                  <>
+                    <Upload className="mr-2 h-4 w-4" />
+                    Upload
+                  </>
+                )}
+              </Button>
             </div>
           </div>
 
-          {/* Upload Button */}
-          <div className="flex justify-end mt-6">
-            <Button onClick={handleUpload} disabled={isProcessing}>
-              <Upload className="mr-2 h-4 w-4" /> {isProcessing ? "Processing..." : "Upload"}
-            </Button>
+          {/* Right Section */}
+          <div className="md:w-1/2 p-6 flex flex-col bg-white justify-center items-center">
+            <Console message={getConsoleMessage()} />
           </div>
-        </div>
-
-        {/* Right Section */}
-        <div className="md:w-1/2 p-6 flex flex-col justify-center items-center">
-          <Console message={getConsoleMessage()} />
         </div>
       </div>
     </div>

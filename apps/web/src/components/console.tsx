@@ -1,23 +1,44 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
+import { Terminal } from "lucide-react";
 
 interface ConsoleProps {
   message: string;
 }
 
 const Console: React.FC<ConsoleProps> = ({ message }) => {
+  const consoleRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (consoleRef.current) {
+      consoleRef.current.scrollTop = consoleRef.current.scrollHeight;
+    }
+  }, [message]);
+
+  const displayMessage = message.trim() || "Your output will appear here.";
+
   return (
-    <div className="bg-gray-900 text-white font-mono p-4 rounded-lg shadow-lg w-full">
-      <div className="bg-gray-800 p-2 rounded-t-lg flex items-center">
-        <div className="h-3 w-3 bg-red-500 rounded-full mr-2"></div>
-        <div className="h-3 w-3 bg-yellow-500 rounded-full mr-2"></div>
-        <div className="h-3 w-3 bg-green-500 rounded-full"></div>
-        <div className="flex-1 text-center text-gray-400 text-sm">paper2code</div>
+    <div className="bg-zinc-900 text-zinc-100 font-mono rounded-lg shadow-xl w-full max-w-2xl overflow-hidden">
+      <div className="bg-zinc-800 p-3 flex items-center justify-between">
+        <div className="flex items-center space-x-2">
+          <Terminal size={18} />
+          <span className="text-sm font-semibold font-caskaydiaCoveNerd">Console Output</span>
+        </div>
+        <div className="flex space-x-1.5">
+          <div className="w-3 h-3 rounded-full bg-red-500"></div>
+          <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+          <div className="w-3 h-3 rounded-full bg-green-500"></div>
+        </div>
       </div>
-      <div className="bg-black p-4 rounded-b-lg h-64 overflow-y-auto font-caskaydiaCoveNerd">
-        <div className="text-gray-200">{message || "# Your output will appear here."}</div>
+      <div ref={consoleRef} className="p-4 h-64 overflow-y-auto bg-zinc-950">
+        {displayMessage.split("\n").map((line, index) => (
+          <div key={index} className="mb-1">
+            <span className="text-green-400">&gt; </span>
+            <span className={`font-caskaydiaCoveNerd ${message.trim() ? "text-zinc-300" : "text-zinc-500 italic"}`}>{line || " "}</span>
+          </div>
+        ))}
       </div>
     </div>
   );
 };
 
-export default Console;
+export { Console };
