@@ -1,42 +1,15 @@
 import { Elysia, t } from "elysia";
 import { cors } from "@elysiajs/cors";
-import { mkdirSync, existsSync, promises as fs } from "fs";
 import path from "path";
-import { exec } from "child_process";
-import vision from "@google-cloud/vision";
-import dotenv from "dotenv";
+import { setupUploadDirectory, uploadDir } from "./utils/fileSystem";
+import { performOCR } from "./services/ocrService";
+import { promises as fs } from "fs";
+import { runDockerContainer } from "./services/dockerService";
+import { logger } from "./utils/logger";
 
-dotenv.config({
-  path: path.resolve(__dirname, "../../../.env"),
-});
+setupUploadDirectory();
 
-const client = new vision.ImageAnnotatorClient({
-  keyFilename: process.env.GCP_SERVICE_ACCOUNT_KEY_PATH,
-});
-
-// Define the directory to store uploaded files
-const uploadDir = path.resolve(__dirname, "uploads");
-if (!existsSync(uploadDir)) {
-  mkdirSync(uploadDir);
-}
-
-// Helper function to execute Docker command
-const runDockerContainer = (filePath: string, fileName: string): Promise<string> => {
-  const containerName = `python-script-runner-${Date.now()}`;
-  const command = `docker run --name ${containerName} --rm -v ${uploadDir}:/code python:3.9-slim python /code/${fileName}`;
-  const timeout = 60 * 1000; // 60 seconds
-  const execOptions = { timeout };
-
-  return new Promise((resolve, reject) => {
-    exec(command, execOptions, (error, stdout, stderr) => {
-      if (error) {
-        reject(`Error executing file: ${stderr}`);
-      } else {
-        resolve(stdout);
-      }
-    });
-  });
-};
+const ALLOWED_FILE_TYPES = ["image/jpg", "image/jpeg", "image/png", "application/pdf"];
 
 const app = new Elysia()
   .use(cors())
@@ -46,38 +19,29 @@ const app = new Elysia()
       try {
         const file = body.file[0];
         if (!file) {
-          return { message: "No file uploaded" };
-        }
-        if (!file || !["image/jpg", "image/jpeg", "image/png", "application/pdf"].includes(file.type)) {
-          return { message: "Unsupported file type" };
+          throw new Error("No file uploaded");
         }
 
-        // Save the uploaded file to a temporary location
-        const tempFilePath = path.resolve(uploadDir, file.name);
-        const arrayBuffer = await file.arrayBuffer();
-        const uint8Array = new Uint8Array(arrayBuffer);
-        await fs.writeFile(tempFilePath, uint8Array);
+        if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+          throw new Error(`Unsupported file type: ${file.type}`);
+        }
 
-        // Perform OCR using Google Cloud Vision API
-        const [result] = await client.textDetection(tempFilePath);
-        const detections = result.textAnnotations || [];
-        const text = detections.length > 0 ? detections[0].description : "";
-
+        logger.info(`Processing ${file.type} file...`);
+        const text = await performOCR(file);
         if (!text) {
-          return { message: "OCR did not detect any text" };
+          throw new Error("No text detected in the file");
         }
+        logger.success("Text extraction completed");
+        logger.info(`Extracted text preview: ${text.substring(0, 100)}`);
 
-        console.log("OCR result:", text);
-
-        // Create a Python file from the OCR result
         const pythonFileName = `ocr_result_${Date.now()}.py`;
         const pythonFilePath = path.resolve(uploadDir, pythonFileName);
         await fs.writeFile(pythonFilePath, text);
+        logger.success(`Python file created: ${pythonFilePath}`);
 
-        // Return the path to the created Python file
-        return { message: "OCR successful", filePath: pythonFilePath };
+        return { message: "Text extraction successful", filePath: pythonFilePath };
       } catch (error) {
-        console.error("Error during OCR processing:", error);
+        logger.error("OCR processing failed:" + error);
         return { message: `Error during OCR processing: ${(error as Error).message}` };
       }
     },
@@ -90,25 +54,41 @@ const app = new Elysia()
   )
   .post(
     "/api/execute",
-    async ({ body }: { body: any }) => {
+    async ({ body }) => {
       try {
-        const filePath = body.filePath;
-        if (!filePath) {
-          return { message: "No file path provided" };
+        const pythonFilePath = body.filePath;
+        if (!pythonFilePath) {
+          throw new Error("No file path provided");
         }
 
-        const fileName = path.basename(filePath);
+        const fileName = path.basename(pythonFilePath);
+        logger.info(`Executing file: ${fileName}`);
 
-        // Run the Docker container with the provided file path
-        const result = await runDockerContainer(filePath, fileName);
-        console.log("Docker result:", result);
-
-        // Optionally, delete the temporary file after execution
-        await fs.unlink(filePath);
-
-        return { message: "Execution successful", result };
+        try {
+          const result = await runDockerContainer(pythonFilePath, fileName);
+          logger.info(`Execution result preview: ${result.substring(0, 100)}`);
+          return { message: "Execution successful", result };
+        } catch (error) {
+          logger.error(`Docker execution failed: ${(error as Error).message}`);
+          return { message: `Error during Docker execution: ${(error as Error).message}` };
+        } finally {
+          try {
+            const fileExists = await fs
+              .access(pythonFilePath)
+              .then(() => true)
+              .catch(() => false);
+            if (fileExists) {
+              await fs.unlink(pythonFilePath);
+              logger.success(`Python file deleted: ${pythonFilePath}`);
+            } else {
+              logger.warning(`Python file not found, could not delete: ${pythonFilePath}`);
+            }
+          } catch (error) {
+            logger.error(`Failed to delete Python file: ${(error as Error).message}`);
+          }
+        }
       } catch (error) {
-        console.error("Error during file execution:", error);
+        logger.error(`File execution failed: ${(error as Error).message}`);
         return { message: `Error during file execution: ${(error as Error).message}` };
       }
     },
@@ -121,5 +101,5 @@ const app = new Elysia()
   );
 
 app.listen(3000, ({ hostname, port }) => {
-  console.log(`🦊 Elysia is running at http://${hostname}:${port}`);
+  logger.info(`🦊 Elysia is running at http://${hostname}:${port}`);
 });
