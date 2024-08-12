@@ -76,7 +76,7 @@ export const performOCR = async (file: File): Promise<string> => {
 
     return text;
   } catch (error) {
-    await fs.unlink(uploadedFilePath).catch(console.error);
+    await fs.unlink(uploadedFilePath).catch(logger.error);
     logger.error(`An error occurred during OCR processing: ${error}`);
     throw error;
   }

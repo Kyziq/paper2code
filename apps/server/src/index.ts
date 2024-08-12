@@ -41,7 +41,7 @@ const app = new Elysia()
 
         return { message: "Text extraction successful", filePath: pythonFilePath };
       } catch (error) {
-        logger.error("OCR processing failed:" + error);
+        logger.error("OCR processing failed: " + error);
         return { message: `Error during OCR processing: ${(error as Error).message}` };
       }
     },
