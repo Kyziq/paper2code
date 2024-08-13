@@ -1,4 +1,4 @@
-import pc from "picocolors";
+import pc from 'picocolors';
 
 class Logger {
   info(message: string): void {
@@ -23,19 +23,15 @@ class Logger {
     }
   }
 
-  logDetailedOCRResults(fullTextAnnotation: any, type: "image" | "pdf"): void {
-    console.log("");
-    this.info(
-      pc.cyan(`----- Detailed OCR Results (${type.toUpperCase()}) -----`),
-    );
+  logDetailedOCRResults(fullTextAnnotation: any, type: 'image' | 'pdf'): void {
+    console.log('');
+    this.info(pc.cyan(`----- Detailed OCR Results (${type.toUpperCase()}) -----`));
 
     fullTextAnnotation.pages?.forEach((page: any, pageIndex: number) => {
       this.info(pc.cyan(`----- Page ${pageIndex + 1} -----`));
       page.blocks?.forEach((block: any, blockIndex: number) => {
         this.info(
-          pc.yellow(
-            `Block ${blockIndex + 1} - Confidence: ${block.confidence.toFixed(2)}`,
-          ),
+          pc.yellow(`Block ${blockIndex + 1} - Confidence: ${block.confidence.toFixed(2)}`),
         );
         block.paragraphs?.forEach((paragraph: any, paragraphIndex: number) => {
           this.info(
@@ -44,8 +40,7 @@ class Logger {
             ),
           );
           paragraph.words?.forEach((word: any, wordIndex: number) => {
-            const wordText =
-              word.symbols?.map((s: any) => s.text).join("") ?? "";
+            const wordText = word.symbols?.map((s: any) => s.text).join('') ?? '';
             this.info(
               pc.blue(
                 `\t\tWord ${wordIndex + 1}: ${wordText} - Confidence: ${word.confidence.toFixed(2)}`,
@@ -63,7 +58,7 @@ class Logger {
       });
     });
 
-    console.log("");
+    console.log('');
   }
 }
 

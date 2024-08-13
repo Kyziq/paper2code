@@ -1,4 +1,4 @@
-import { create } from "zustand";
+import { create } from 'zustand';
 
 interface Store {
   file: File | null;
@@ -12,7 +12,7 @@ interface Store {
 const useStore = create<Store>()((set) => ({
   file: null,
   language: null,
-  message: "",
+  message: '',
   setFile: (file) => set({ file }),
   setLanguage: (language) => set({ language }),
   setMessage: (message) => set({ message }),

@@ -1,10 +1,10 @@
-import { Storage } from "@google-cloud/storage";
-import vision from "@google-cloud/vision";
-import dotenv from "dotenv";
-import path from "path";
-import { logger } from "../utils/logger";
+import { Storage } from '@google-cloud/storage';
+import vision from '@google-cloud/vision';
+import dotenv from 'dotenv';
+import path from 'path';
+import { logger } from '../utils/logger';
 
-dotenv.config({ path: path.resolve(__dirname, "../../../../.env") });
+dotenv.config({ path: path.resolve(__dirname, '../../../../.env') });
 
 const client = new vision.ImageAnnotatorClient({
   keyFilename: process.env.GCP_SERVICE_ACCOUNT_KEY_PATH,
@@ -25,13 +25,9 @@ async function createBucketIfNotExists() {
         location,
         [storageClass]: true,
       });
-      logger.info(
-        `Bucket ${bucket.name} created with ${storageClass} class in ${location}`,
-      );
+      logger.info(`Bucket ${bucket.name} created with ${storageClass} class in ${location}`);
     } else {
-      logger.info(
-        `Using bucket ${bucketName} that has been created previously`,
-      );
+      logger.info(`Using bucket ${bucketName} that has been created previously`);
     }
   } catch (error) {
     logger.error(`Error creating/checking bucket: ${error}`);
@@ -48,28 +44,28 @@ export const handleImage = async (fileName: string): Promise<string> => {
       imageContext: {
         // specifies English language (en), transform extension singleton (t),
         // input method engine transform extension code (i0), and handwriting transform code (handwrit)
-        languageHints: ["en-t-i0-handwrit"],
+        languageHints: ['en-t-i0-handwrit'],
       },
     });
     const fullTextAnnotation = result.fullTextAnnotation;
 
     if (!fullTextAnnotation || !fullTextAnnotation.text) {
-      logger.error("No text detected in the image.");
-      return "";
+      logger.error('No text detected in the image.');
+      return '';
     }
 
     logger.info(`Full text detected: ${fullTextAnnotation.text}`);
-    logger.logDetailedOCRResults(fullTextAnnotation, "image");
+    logger.logDetailedOCRResults(fullTextAnnotation, 'image');
     return fullTextAnnotation.text.trim();
   } catch (error) {
     logger.error(`Failed to perform OCR on image: ${error}`);
-    throw new Error("Failed to perform OCR on image");
+    throw new Error('Failed to perform OCR on image');
   }
 };
 
 export const handlePDF = async (filePath: string): Promise<string> => {
   // TODO: Implement PDF handling logic
-  throw new Error("PDF handling not implemented yet");
+  throw new Error('PDF handling not implemented yet');
 };
 
 export const performOCR = async (file: File): Promise<string> => {
@@ -91,9 +87,7 @@ export const performOCR = async (file: File): Promise<string> => {
 
     // Perform OCR
     const text =
-      file.type === "application/pdf"
-        ? await handlePDF(file.name)
-        : await handleImage(file.name);
+      file.type === 'application/pdf' ? await handlePDF(file.name) : await handleImage(file.name);
 
     return text;
   } catch (error) {

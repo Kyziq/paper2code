@@ -1,35 +1,27 @@
-import {
-  ExecuteFileResponse,
-  UploadFileParams,
-  UploadFileResponse,
-} from "../types";
-import axiosInstance from "./axiosInstance";
+import { ExecuteFileResponse, UploadFileParams, UploadFileResponse } from '../types';
+import axiosInstance from './axiosInstance';
 
-export const uploadFile = async (
-  params: UploadFileParams,
-): Promise<UploadFileResponse> => {
+export const uploadFile = async (params: UploadFileParams): Promise<UploadFileResponse> => {
   const { file, language } = params;
   const formData = new FormData();
-  formData.append("file", file);
-  formData.append("language", language);
+  formData.append('file', file);
+  formData.append('language', language);
 
-  const response = await axiosInstance.post("/ocr", formData, {
+  const response = await axiosInstance.post('/ocr', formData, {
     headers: {
-      "Content-Type": "multipart/form-data",
+      'Content-Type': 'multipart/form-data',
     },
   });
   return response.data;
 };
 
-export const executeFile = async (
-  filePath: string,
-): Promise<ExecuteFileResponse> => {
+export const executeFile = async (filePath: string): Promise<ExecuteFileResponse> => {
   const response = await axiosInstance.post(
-    "/execute",
+    '/execute',
     { filePath },
     {
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
     },
   );

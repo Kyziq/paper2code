@@ -1,30 +1,25 @@
-import { cors } from "@elysiajs/cors";
-import { Elysia, t } from "elysia";
-import { promises as fs } from "fs";
-import path from "path";
-import { runDockerContainer } from "./services/dockerService";
-import { performOCR } from "./services/ocrService";
-import { setupTempDirectory, tempDir } from "./utils/fileSystem";
-import { logger } from "./utils/logger";
+import { cors } from '@elysiajs/cors';
+import { Elysia, t } from 'elysia';
+import { promises as fs } from 'fs';
+import path from 'path';
+import { runDockerContainer } from './services/dockerService';
+import { performOCR } from './services/ocrService';
+import { setupTempDirectory, tempDir } from './utils/fileSystem';
+import { logger } from './utils/logger';
 
 setupTempDirectory();
 
-const ALLOWED_FILE_TYPES = [
-  "image/jpg",
-  "image/jpeg",
-  "image/png",
-  "application/pdf",
-];
+const ALLOWED_FILE_TYPES = ['image/jpg', 'image/jpeg', 'image/png', 'application/pdf'];
 
 const app = new Elysia()
   .use(cors())
   .post(
-    "/api/ocr",
+    '/api/ocr',
     async ({ body }) => {
       try {
         const file = body.file[0];
         if (!file) {
-          throw new Error("No file uploaded");
+          throw new Error('No file uploaded');
         }
 
         if (!ALLOWED_FILE_TYPES.includes(file.type)) {
@@ -34,9 +29,9 @@ const app = new Elysia()
         logger.info(`Processing ${file.type} file...`);
         const text = await performOCR(file);
         if (!text) {
-          throw new Error("No text detected in the file");
+          throw new Error('No text detected in the file');
         }
-        logger.success("Text extraction completed");
+        logger.success('Text extraction completed');
         logger.info(`Extracted text preview: ${text.substring(0, 100)}`);
 
         const pythonFileName = `ocr_result_${Date.now()}.py`;
@@ -45,11 +40,11 @@ const app = new Elysia()
         logger.success(`Python file created: ${pythonFilePath}`);
 
         return {
-          message: "Text extraction successful",
+          message: 'Text extraction successful',
           filePath: pythonFilePath,
         };
       } catch (error) {
-        logger.error("OCR processing failed: " + error);
+        logger.error('OCR processing failed: ' + error);
         return {
           message: `Error during OCR processing: ${(error as Error).message}`,
         };
@@ -59,16 +54,16 @@ const app = new Elysia()
       body: t.Object({
         file: t.Files(),
       }),
-      type: "formdata",
+      type: 'formdata',
     },
   )
   .post(
-    "/api/execute",
+    '/api/execute',
     async ({ body }) => {
       try {
         const pythonFilePath = body.filePath;
         if (!pythonFilePath) {
-          throw new Error("No file path provided");
+          throw new Error('No file path provided');
         }
 
         const fileName = path.basename(pythonFilePath);
@@ -78,7 +73,7 @@ const app = new Elysia()
           const result = await runDockerContainer(pythonFilePath, fileName);
           const trimmedResult = result.trim(); // Trim the result to remove extra newlines
           logger.info(`Execution result preview: ${trimmedResult}`);
-          return { message: "Execution successful", result };
+          return { message: 'Execution successful', result };
         } catch (error) {
           logger.error(`Docker execution failed: ${(error as Error).message}`);
           return {
@@ -94,14 +89,10 @@ const app = new Elysia()
               await fs.unlink(pythonFilePath);
               logger.success(`Python file deleted: ${pythonFilePath}`);
             } else {
-              logger.warning(
-                `Python file not found, could not delete: ${pythonFilePath}`,
-              );
+              logger.warning(`Python file not found, could not delete: ${pythonFilePath}`);
             }
           } catch (error) {
-            logger.error(
-              `Failed to delete Python file: ${(error as Error).message}`,
-            );
+            logger.error(`Failed to delete Python file: ${(error as Error).message}`);
           }
         }
       } catch (error) {
@@ -115,7 +106,7 @@ const app = new Elysia()
       body: t.Object({
         filePath: t.String(),
       }),
-      type: "json",
+      type: 'json',
     },
   );
 
