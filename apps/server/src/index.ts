@@ -1,13 +1,13 @@
 import { Elysia, t } from "elysia";
 import { cors } from "@elysiajs/cors";
 import path from "path";
-import { setupUploadDirectory, uploadDir } from "./utils/fileSystem";
+import { setupTempDirectory, tempDir } from "./utils/fileSystem";
 import { performOCR } from "./services/ocrService";
 import { promises as fs } from "fs";
 import { runDockerContainer } from "./services/dockerService";
 import { logger } from "./utils/logger";
 
-setupUploadDirectory();
+setupTempDirectory();
 
 const ALLOWED_FILE_TYPES = ["image/jpg", "image/jpeg", "image/png", "application/pdf"];
 
@@ -35,7 +35,7 @@ const app = new Elysia()
         logger.info(`Extracted text preview: ${text.substring(0, 100)}`);
 
         const pythonFileName = `ocr_result_${Date.now()}.py`;
-        const pythonFilePath = path.resolve(uploadDir, pythonFileName);
+        const pythonFilePath = path.resolve(tempDir, pythonFileName);
         await fs.writeFile(pythonFilePath, text);
         logger.success(`Python file created: ${pythonFilePath}`);
 
@@ -66,7 +66,8 @@ const app = new Elysia()
 
         try {
           const result = await runDockerContainer(pythonFilePath, fileName);
-          logger.info(`Execution result preview: ${result.substring(0, 100)}`);
+          const trimmedResult = result.trim(); // Trim the result to remove extra newlines
+          logger.info(`Execution result preview: ${trimmedResult}`);
           return { message: "Execution successful", result };
         } catch (error) {
           logger.error(`Docker execution failed: ${(error as Error).message}`);

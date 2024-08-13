@@ -1,10 +1,10 @@
 import { mkdirSync, existsSync } from "fs";
 import path from "path";
 
-export const uploadDir = path.resolve(__dirname, "../uploads");
+export const tempDir = path.resolve(__dirname, "../temp");
 
-export const setupUploadDirectory = () => {
-  if (!existsSync(uploadDir)) {
-    mkdirSync(uploadDir);
+export const setupTempDirectory = () => {
+  if (!existsSync(tempDir)) {
+    mkdirSync(tempDir);
   }
 };

@@ -1,10 +1,10 @@
 import { exec } from "child_process";
-import { uploadDir } from "../utils/fileSystem";
+import { tempDir } from "../utils/fileSystem";
 import { logger } from "../utils/logger";
 
 export const runDockerContainer = (filePath: string, fileName: string): Promise<string> => {
   const containerName = `python-script-runner-${Date.now()}`;
-  const command = `docker run --name ${containerName} --rm -v ${uploadDir}:/code python:3.9-slim python /code/${fileName}`;
+  const command = `docker run --name ${containerName} --rm -v ${tempDir}:/code python:3.9-slim python /code/${fileName}`;
   const timeout = 60 * 1000; // 60 seconds
 
   logger.info(`Starting Docker container: ${containerName}`);
