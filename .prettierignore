@@ -1,0 +1,2 @@
+# Ignore the generated route tree file
+apps/web/src/routeTree.gen.ts

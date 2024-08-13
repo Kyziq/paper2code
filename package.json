@@ -6,7 +6,7 @@
     "build": "turbo build",
     "dev": "turbo dev",
     "lint": "turbo lint",
-    "format": "bunx prettier --write \"**/*.{js,jsx,ts,tsx,css}"
+    "format": "bun prettier --write \"**/*.{js,jsx,ts,tsx,css}"
   },
   "devDependencies": {
     "dotenv": "^16.4.5",
