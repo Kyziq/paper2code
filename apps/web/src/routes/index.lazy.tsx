@@ -2,7 +2,7 @@ import { useDropzone } from "react-dropzone";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createLazyFileRoute } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { ImageUp, Upload } from "lucide-react";
+import { FileText, Upload } from "lucide-react";
 
 import useStore from "@/stores/useStore";
 import { uploadFile, executeFile } from "@/api";
@@ -15,8 +15,7 @@ import { Console } from "@/components/console";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 // Accepted file types for the dropzone
-// TODO: PDF support
-const ACCEPTED_FILE_TYPES = { "image/*": [".png", ".jpg", ".jpeg"] };
+const ACCEPTED_FILE_TYPES = { "image/*": [".png", ".jpg", ".jpeg"], "application/pdf": [".pdf"] };
 // Programming languages supported by the application
 // TODO: Add more languages
 const LANGUAGES = [{ value: "python", label: "Python" }];
@@ -39,7 +38,7 @@ function Index() {
     },
     onError: (error: Error) => {
       setMessage(error.message);
-      toast.error(error.message);
+      toast.error(`Error uploading file: ${error.message}`);
     },
   });
 
@@ -52,7 +51,7 @@ function Index() {
     },
     onError: (error: Error) => {
       setMessage(error.message);
-      toast.error(error.message);
+      toast.error(`Error executing file: ${error.message}`);
     },
   });
 
@@ -118,14 +117,16 @@ function Index() {
                       <p className="text-gray-700">{file.name}</p>
                     ) : (
                       <div>
-                        <ImageUp className="mx-auto h-12 w-12 text-gray-400" />
+                        <FileText className="mx-auto h-12 w-12 text-gray-400" />
                         <div className="flex text-sm text-gray-600">
                           <label className="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500">
                             <span>Upload a file</span>
                           </label>
                           <p className="pl-1">or drag and drop</p>
                         </div>
-                        <p className="text-xs text-gray-500">PNG, JPG, JPEG up to 10MB</p>
+                        <p className="text-xs text-gray-500">PNG, JPG, JPEG, PDF</p>
+                        {/* TODO: File size limit */}
+                        {/* <p className="text-xs text-gray-500">PNG, JPG, JPEG, up to 10MB</p> */}
                       </div>
                     )}
                   </div>
