@@ -1,4 +1,4 @@
-import { mkdirSync, existsSync } from "fs";
+import { existsSync, mkdirSync } from "fs";
 import path from "path";
 
 export const tempDir = path.resolve(__dirname, "../temp");

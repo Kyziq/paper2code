@@ -1,8 +1,8 @@
-import vision from "@google-cloud/vision";
-import path from "path";
-import dotenv from "dotenv";
-import { logger } from "../utils/logger";
 import { Storage } from "@google-cloud/storage";
+import vision from "@google-cloud/vision";
+import dotenv from "dotenv";
+import path from "path";
+import { logger } from "../utils/logger";
 
 dotenv.config({ path: path.resolve(__dirname, "../../../../.env") });
 
@@ -25,9 +25,13 @@ async function createBucketIfNotExists() {
         location,
         [storageClass]: true,
       });
-      logger.info(`Bucket ${bucket.name} created with ${storageClass} class in ${location}`);
+      logger.info(
+        `Bucket ${bucket.name} created with ${storageClass} class in ${location}`,
+      );
     } else {
-      logger.info(`Using bucket ${bucketName} that has been created previously`);
+      logger.info(
+        `Using bucket ${bucketName} that has been created previously`,
+      );
     }
   } catch (error) {
     logger.error(`Error creating/checking bucket: ${error}`);
@@ -86,7 +90,10 @@ export const performOCR = async (file: File): Promise<string> => {
     logger.info(`File uploaded to bucket: ${file.name}`);
 
     // Perform OCR
-    const text = file.type === "application/pdf" ? await handlePDF(file.name) : await handleImage(file.name);
+    const text =
+      file.type === "application/pdf"
+        ? await handlePDF(file.name)
+        : await handleImage(file.name);
 
     return text;
   } catch (error) {

@@ -1,8 +1,8 @@
-import path, { resolve } from "path";
-import { defineConfig } from "vite";
+import { TanStackRouterVite } from "@tanstack/router-plugin/vite";
 import react from "@vitejs/plugin-react-swc";
 import dotenv from "dotenv";
-import { TanStackRouterVite } from "@tanstack/router-plugin/vite";
+import path, { resolve } from "path";
+import { defineConfig } from "vite";
 
 dotenv.config({ path: resolve(__dirname, "../../.env") });
 

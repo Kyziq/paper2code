@@ -1,7 +1,13 @@
+import {
+  ExecuteFileResponse,
+  UploadFileParams,
+  UploadFileResponse,
+} from "../types";
 import axiosInstance from "./axiosInstance";
-import { UploadFileResponse, UploadFileParams, ExecuteFileResponse } from "../types";
 
-export const uploadFile = async (params: UploadFileParams): Promise<UploadFileResponse> => {
+export const uploadFile = async (
+  params: UploadFileParams,
+): Promise<UploadFileResponse> => {
   const { file, language } = params;
   const formData = new FormData();
   formData.append("file", file);
@@ -15,7 +21,9 @@ export const uploadFile = async (params: UploadFileParams): Promise<UploadFileRe
   return response.data;
 };
 
-export const executeFile = async (filePath: string): Promise<ExecuteFileResponse> => {
+export const executeFile = async (
+  filePath: string,
+): Promise<ExecuteFileResponse> => {
   const response = await axiosInstance.post(
     "/execute",
     { filePath },
@@ -23,7 +31,7 @@ export const executeFile = async (filePath: string): Promise<ExecuteFileResponse
       headers: {
         "Content-Type": "application/json",
       },
-    }
+    },
   );
   return response.data;
 };
