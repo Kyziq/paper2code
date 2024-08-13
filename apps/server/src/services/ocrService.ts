@@ -37,7 +37,16 @@ async function createBucketIfNotExists() {
 
 export const handleImage = async (fileName: string): Promise<string> => {
   try {
-    const [result] = await client.documentTextDetection(`gs://${bucketName}/${fileName}`);
+    const [result] = await client.documentTextDetection({
+      image: {
+        source: { imageUri: `gs://${bucketName}/${fileName}` },
+      },
+      imageContext: {
+        // specifies English language (en), transform extension singleton (t),
+        // input method engine transform extension code (i0), and handwriting transform code (handwrit)
+        languageHints: ["en-t-i0-handwrit"],
+      },
+    });
     const fullTextAnnotation = result.fullTextAnnotation;
 
     if (!fullTextAnnotation || !fullTextAnnotation.text) {
