@@ -1,38 +1,40 @@
 import { cors } from '@elysiajs/cors';
+import { FileExecutionResponse, FileUploadResponse } from '@shared/types';
 import { Elysia, t } from 'elysia';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { runDockerContainer } from './services/dockerService';
 import { performOCR } from './services/ocrService';
+import { ALLOWED_FILE_TYPES, FILE_SIZE_LIMITS } from './utils/constants';
+import {
+  ApiError,
+  BadRequestError,
+  PayloadTooLargeError,
+  UnsupportedMediaTypeError,
+} from './utils/errors';
 import { setupTempDirectory, tempDir } from './utils/fileSystem';
 import { logger } from './utils/logger';
 
 setupTempDirectory();
 
 /* -------------------------------- Constants ------------------------------- */
-const ALLOWED_FILE_TYPES = ['image/jpg', 'image/jpeg', 'image/png', 'application/pdf'];
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-
 const app = new Elysia()
   .use(cors())
   .post(
     '/api/ocr',
-    async ({ body, set }) => {
+    async ({ body, set }): Promise<FileUploadResponse> => {
       const file = body.file[0];
-      if (!file) {
-        set.status = 400;
-        return { message: 'No file uploaded' };
-      }
+      if (!file) throw new BadRequestError('No file uploaded');
+      if (!ALLOWED_FILE_TYPES.includes(file.type))
+        throw new UnsupportedMediaTypeError(`Unsupported file type ${file.type}`);
 
-      if (!ALLOWED_FILE_TYPES.includes(file.type)) {
-        set.status = 415;
-        return { message: `Unsupported file type: ${file.type}` };
-      }
-
-      if (file.size > MAX_FILE_SIZE) {
-        set.status = 413;
-        return { message: 'File size exceeds the limit' };
-      }
+      const sizeLimit = file.type.startsWith('image/')
+        ? FILE_SIZE_LIMITS['image/*']
+        : FILE_SIZE_LIMITS[file.type as keyof typeof FILE_SIZE_LIMITS];
+      if (file.size > sizeLimit)
+        throw new PayloadTooLargeError(
+          `Your ${file.type} file size is ${(file.size / (1024 * 1024)).toFixed(2)} MB. It should be less than ${sizeLimit / (1024 * 1024)} MB`,
+        );
 
       try {
         logger.info(`Processing ${file.type} file...`);
@@ -41,17 +43,21 @@ const app = new Elysia()
         const pythonFileName = `ocr_result_${Date.now()}.py`;
         const pythonFilePath = path.resolve(tempDir, pythonFileName);
         await fs.writeFile(pythonFilePath, text);
-        logger.info(`Python file created: ${pythonFilePath}`);
+        logger.success(`Python file created: ${pythonFilePath}`);
 
         return {
+          status: 'success',
           message: 'Text extraction successful',
-          filePath: pythonFilePath,
+          data: {
+            uploadedFilePath: pythonFilePath,
+          },
         };
       } catch (error) {
-        logger.error(`OCR processing failed: ${(error as Error).message}`);
+        logger.error(`OCR processing failed. ${(error as Error).message}`);
         set.status = 500;
         return {
-          message: `Error during OCR processing: ${(error as Error).message}`,
+          status: 'error',
+          message: `Error during OCR processing. ${(error as Error).message}`,
         };
       }
     },
@@ -60,29 +66,38 @@ const app = new Elysia()
         file: t.Files(),
       }),
       type: 'formdata',
+      response: t.Object({
+        status: t.Union([t.Literal('success'), t.Literal('error')]),
+        message: t.String(),
+        data: t.Optional(
+          t.Object({
+            uploadedFilePath: t.String(),
+          }),
+        ),
+      }),
     },
   )
   .post(
     '/api/execute',
-    async ({ body, set }) => {
+    async ({ body }): Promise<FileExecutionResponse> => {
       const pythonFilePath = body.filePath;
       if (!pythonFilePath) {
-        set.status = 400;
-        throw new Error('No file path provided');
+        throw new BadRequestError('No file path provided');
       }
 
       const fileName = path.basename(pythonFilePath);
       logger.info(`Executing file: ${fileName}`);
-
       try {
-        const result = await runDockerContainer(fileName);
-        logger.info(`Execution result preview: ${result}`);
-        set.status = 200;
-        return { message: 'Execution successful', result };
+        const output = await runDockerContainer(fileName);
+        logger.info(`Execution output preview: ${output}`);
+        return {
+          status: 'success',
+          message: 'File execution successful',
+          data: { output },
+        };
       } catch (error) {
-        logger.error(`Execution failed: ${(error as Error).message}`);
-        set.status = 500;
-        return { message: `Error during file execution: ${(error as Error).message}` };
+        logger.error(`Execution failed. ${(error as Error).message}`);
+        throw new Error(`Error during file execution. ${(error as Error).message}`);
       }
     },
     {
@@ -90,8 +105,38 @@ const app = new Elysia()
         filePath: t.String(),
       }),
       type: 'json',
+      response: t.Object({
+        status: t.Union([t.Literal('success'), t.Literal('error')]),
+        message: t.String(),
+        data: t.Optional(
+          t.Object({
+            output: t.String(),
+          }),
+        ),
+      }),
     },
-  );
+  )
+  .onError(({ error, set }) => {
+    if (error instanceof ApiError) {
+      set.status = error.statusCode;
+      return {
+        status: 'error',
+        statusCode: error.statusCode,
+        message: error.message,
+      };
+    }
+
+    logger.error(`Unexpected error: ${error}`);
+    set.status = 500;
+    return {
+      status: 'error',
+      statusCode: 500,
+      message: 'An unexpected error occurred',
+    };
+  })
+  .onRequest(({ request }) => {
+    logger.api(`${request.method} ${request.url}`);
+  });
 
 app.listen(3000, ({ hostname, port }) => {
   logger.info(`🦊 Elysia is running at http://${hostname}:${port}`);

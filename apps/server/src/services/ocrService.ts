@@ -90,7 +90,8 @@ export const performOCR = async (file: File): Promise<string> => {
       throw new Error('No text detected in the file');
     }
 
-    logger.info(`OCR completed for ${file.name}. Text preview: ${text.substring(0, 100)}`);
+    logger.info(`OCR text preview: ${text.substring(0, 100)}`);
+    logger.success(`OCR process completed successfully for ${file.name}`);
     return text;
   } finally {
     // Always attempt to delete the file at cloud
