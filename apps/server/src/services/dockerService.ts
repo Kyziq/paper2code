@@ -1,17 +1,12 @@
 import { exec } from 'child_process';
+import { promises as fs } from 'fs';
 import { tempDir } from '../utils/fileSystem';
 import { logger } from '../utils/logger';
 
 const checkDockerRunning = (): Promise<boolean> => {
   return new Promise((resolve) => {
     exec('docker info', (error) => {
-      if (error) {
-        logger.error('Docker is not running');
-        resolve(false);
-      } else {
-        logger.info('Docker is running');
-        resolve(true);
-      }
+      resolve(!error);
     });
   });
 };
@@ -26,18 +21,25 @@ export const runDockerContainer = async (fileName: string): Promise<string> => {
   const command = `docker run --name ${containerName} --rm -v ${tempDir}:/code python:3.9-slim python /code/${fileName}`;
   const timeout = 60 * 1000; // 60 seconds
 
-  logger.info(`Starting Docker container: ${containerName}`);
-  logger.info(`Running command: ${command}`);
+  logger.info(`Starting Docker container: ${containerName}\nRunning command: ${command}`);
 
-  return new Promise((resolve, reject) => {
-    exec(command, { timeout }, (error, stdout, stderr) => {
-      if (error) {
-        logger.error(`Docker execution failed: ${stderr}`);
-        reject(`Error executing file: ${stderr}`);
-      } else {
-        logger.success(`Docker execution completed for ${fileName}`);
-        resolve(stdout);
-      }
+  try {
+    const result = await new Promise<string>((resolve, reject) => {
+      exec(command, { timeout }, (error, stdout, stderr) => {
+        if (error) {
+          reject(new Error(`Docker execution failed: ${stderr}`));
+        } else {
+          resolve(stdout);
+        }
+      });
     });
-  });
+
+    logger.info(`Docker execution completed for ${fileName}`);
+    return result.trim();
+  } finally {
+    // Always attempt to delete the temporary local Python file
+    const filePath = `${tempDir}/${fileName}`;
+    await fs.unlink(filePath);
+    logger.info(`Python file deleted: ${filePath}`);
+  }
 };

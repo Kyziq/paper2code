@@ -5,14 +5,12 @@ import path from 'path';
 import { logger } from '../utils/logger';
 
 dotenv.config({ path: path.resolve(__dirname, '../../../../.env') });
-
 const client = new vision.ImageAnnotatorClient({
   keyFilename: process.env.GCP_SERVICE_ACCOUNT_KEY_PATH,
 });
 const storage = new Storage({
   keyFilename: process.env.GCP_SERVICE_ACCOUNT_KEY_PATH,
 });
-
 const bucketName = process.env.GCP_STORAGE_BUCKET_NAME!;
 const storageClass = process.env.GCP_STORAGE_CLASS!;
 const location = process.env.GCP_STORAGE_LOCATION!;
@@ -69,12 +67,11 @@ export const handlePDF = async (filePath: string): Promise<string> => {
 };
 
 export const performOCR = async (file: File): Promise<string> => {
+  await createBucketIfNotExists();
+  const bucket = storage.bucket(bucketName);
+  const blob = bucket.file(file.name);
+
   try {
-    await createBucketIfNotExists();
-
-    const bucket = storage.bucket(bucketName);
-    const blob = bucket.file(file.name);
-
     // Get the array buffer of the file
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
@@ -89,14 +86,16 @@ export const performOCR = async (file: File): Promise<string> => {
     const text =
       file.type === 'application/pdf' ? await handlePDF(file.name) : await handleImage(file.name);
 
+    if (!text) {
+      throw new Error('No text detected in the file');
+    }
+
+    logger.info(`OCR completed for ${file.name}. Text preview: ${text.substring(0, 100)}`);
     return text;
-  } catch (error) {
-    logger.error(`An error occurred during OCR processing: ${error}`);
-    throw error;
   } finally {
-    // Ensure attempt to delete the file whether OCR succeeds or fails
+    // Always attempt to delete the file at cloud
     try {
-      await storage.bucket(bucketName).file(file.name).delete();
+      await blob.delete();
       logger.info(`File deleted from bucket: ${file.name}`);
     } catch (deleteError) {
       logger.error(`Failed to delete file from bucket: ${deleteError}`);

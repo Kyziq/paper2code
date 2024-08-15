@@ -18,42 +18,38 @@ const app = new Elysia()
   .post(
     '/api/ocr',
     async ({ body, set }) => {
+      const file = body.file[0];
+      if (!file) {
+        set.status = 400;
+        return { message: 'No file uploaded' };
+      }
+
+      if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+        set.status = 415;
+        return { message: `Unsupported file type: ${file.type}` };
+      }
+
+      if (file.size > MAX_FILE_SIZE) {
+        set.status = 413;
+        return { message: 'File size exceeds the limit' };
+      }
+
       try {
-        const file = body.file[0];
-        if (!file) {
-          set.status = 400;
-          return { message: 'No file uploaded' };
-        }
-
-        if (!ALLOWED_FILE_TYPES.includes(file.type)) {
-          set.status = 415;
-          return { message: `Unsupported file type: ${file.type}` };
-        }
-
-        if (file.size > MAX_FILE_SIZE) {
-          set.status = 413;
-          return { message: 'File size exceeds the limit' };
-        }
-
         logger.info(`Processing ${file.type} file...`);
         const text = await performOCR(file);
-        if (!text) {
-          throw new Error('No text detected in the file');
-        }
-        logger.success('Text extraction completed');
-        logger.info(`Extracted text preview: ${text.substring(0, 100)}`);
 
         const pythonFileName = `ocr_result_${Date.now()}.py`;
         const pythonFilePath = path.resolve(tempDir, pythonFileName);
         await fs.writeFile(pythonFilePath, text);
-        logger.success(`Python file created: ${pythonFilePath}`);
+        logger.info(`Python file created: ${pythonFilePath}`);
 
         return {
           message: 'Text extraction successful',
           filePath: pythonFilePath,
         };
       } catch (error) {
-        logger.error('OCR processing failed: ' + error);
+        logger.error(`OCR processing failed: ${(error as Error).message}`);
+        set.status = 500;
         return {
           message: `Error during OCR processing: ${(error as Error).message}`,
         };
@@ -68,9 +64,10 @@ const app = new Elysia()
   )
   .post(
     '/api/execute',
-    async ({ body }) => {
+    async ({ body, set }) => {
       const pythonFilePath = body.filePath;
       if (!pythonFilePath) {
+        set.status = 400;
         throw new Error('No file path provided');
       }
 
@@ -78,16 +75,14 @@ const app = new Elysia()
       logger.info(`Executing file: ${fileName}`);
 
       try {
-        const result = await runDockerContainer(pythonFilePath, fileName);
-        const trimmedResult = result.trim(); // Trim the result to remove extra newlines
-        logger.info(`Execution result preview: ${trimmedResult}`);
-        return { message: 'Execution successful', result: trimmedResult };
+        const result = await runDockerContainer(fileName);
+        logger.info(`Execution result preview: ${result}`);
+        set.status = 200;
+        return { message: 'Execution successful', result };
       } catch (error) {
-        logger.error(`Docker execution failed: ${(error as Error).message}`);
+        logger.error(`Execution failed: ${(error as Error).message}`);
+        set.status = 500;
         return { message: `Error during file execution: ${(error as Error).message}` };
-      } finally {
-        await fs.unlink(pythonFilePath);
-        logger.success(`Python file deleted: ${pythonFilePath}`);
       }
     },
     {
