@@ -23,6 +23,10 @@ class Logger {
     }
   }
 
+  api(message: string): void {
+    console.log(pc.cyan(`🔗 [API] ${message}`));
+  }
+
   logDetailedOCRResults(fullTextAnnotation: any, type: 'image' | 'pdf'): void {
     console.log('');
     this.info(pc.cyan(`----- Detailed OCR Results (${type.toUpperCase()}) -----`));
