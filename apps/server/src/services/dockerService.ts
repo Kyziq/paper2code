@@ -12,18 +12,21 @@ const checkDockerRunning = (): Promise<boolean> => {
 };
 
 export const runDockerContainer = async (fileName: string): Promise<string> => {
-  const isDockerRunning = await checkDockerRunning();
-  if (!isDockerRunning)
-    throw new Error(`Docker is not running. Please start Docker and try again.`);
-  logger.info('Docker is running, proceeding with container execution');
-
-  const containerName = `python-script-runner-${Date.now()}`;
-  const command = `docker run --name ${containerName} --rm -v ${tempDir}:/code python:3.9-slim python /code/${fileName}`;
-  const timeout = 60 * 1000; // 60 seconds
-
-  logger.info(`Starting Docker container: ${containerName}\nRunning command: ${command}`);
+  const filePath = `${tempDir}/${fileName}`;
 
   try {
+    const isDockerRunning = await checkDockerRunning();
+    if (!isDockerRunning) {
+      throw new Error(`Docker is not running. Please start Docker and try again.`);
+    }
+    logger.info('Docker is running, proceeding with container execution');
+
+    const containerName = `python-script-runner-${Date.now()}`;
+    const command = `docker run --name ${containerName} --rm -v ${tempDir}:/code python:3.9-slim python /code/${fileName}`;
+    const timeout = 60 * 1000; // 60 seconds
+
+    logger.info(`Starting Docker container: ${containerName}\nRunning command: ${command}`);
+
     const result = await new Promise<string>((resolve, reject) => {
       exec(command, { timeout }, (error, stdout, stderr) => {
         if (error) {
@@ -38,7 +41,6 @@ export const runDockerContainer = async (fileName: string): Promise<string> => {
     return result.trim();
   } finally {
     // Always attempt to delete the temporary local Python file
-    const filePath = `${tempDir}/${fileName}`;
     await fs.unlink(filePath);
     logger.info(`Python file deleted: ${filePath}`);
   }
