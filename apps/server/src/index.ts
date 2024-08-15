@@ -9,21 +9,30 @@ import { logger } from './utils/logger';
 
 setupTempDirectory();
 
+/* -------------------------------- Constants ------------------------------- */
 const ALLOWED_FILE_TYPES = ['image/jpg', 'image/jpeg', 'image/png', 'application/pdf'];
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 const app = new Elysia()
   .use(cors())
   .post(
     '/api/ocr',
-    async ({ body }) => {
+    async ({ body, set }) => {
       try {
         const file = body.file[0];
         if (!file) {
-          throw new Error('No file uploaded');
+          set.status = 400;
+          return { message: 'No file uploaded' };
         }
 
         if (!ALLOWED_FILE_TYPES.includes(file.type)) {
-          throw new Error(`Unsupported file type: ${file.type}`);
+          set.status = 415;
+          return { message: `Unsupported file type: ${file.type}` };
+        }
+
+        if (file.size > MAX_FILE_SIZE) {
+          set.status = 413;
+          return { message: 'File size exceeds the limit' };
         }
 
         logger.info(`Processing ${file.type} file...`);
@@ -60,46 +69,25 @@ const app = new Elysia()
   .post(
     '/api/execute',
     async ({ body }) => {
+      const pythonFilePath = body.filePath;
+      if (!pythonFilePath) {
+        throw new Error('No file path provided');
+      }
+
+      const fileName = path.basename(pythonFilePath);
+      logger.info(`Executing file: ${fileName}`);
+
       try {
-        const pythonFilePath = body.filePath;
-        if (!pythonFilePath) {
-          throw new Error('No file path provided');
-        }
-
-        const fileName = path.basename(pythonFilePath);
-        logger.info(`Executing file: ${fileName}`);
-
-        try {
-          const result = await runDockerContainer(pythonFilePath, fileName);
-          const trimmedResult = result.trim(); // Trim the result to remove extra newlines
-          logger.info(`Execution result preview: ${trimmedResult}`);
-          return { message: 'Execution successful', result };
-        } catch (error) {
-          logger.error(`Docker execution failed: ${(error as Error).message}`);
-          return {
-            message: `Error during Docker execution: ${(error as Error).message}`,
-          };
-        } finally {
-          try {
-            const fileExists = await fs
-              .access(pythonFilePath)
-              .then(() => true)
-              .catch(() => false);
-            if (fileExists) {
-              await fs.unlink(pythonFilePath);
-              logger.success(`Python file deleted: ${pythonFilePath}`);
-            } else {
-              logger.warning(`Python file not found, could not delete: ${pythonFilePath}`);
-            }
-          } catch (error) {
-            logger.error(`Failed to delete Python file: ${(error as Error).message}`);
-          }
-        }
+        const result = await runDockerContainer(pythonFilePath, fileName);
+        const trimmedResult = result.trim(); // Trim the result to remove extra newlines
+        logger.info(`Execution result preview: ${trimmedResult}`);
+        return { message: 'Execution successful', result: trimmedResult };
       } catch (error) {
-        logger.error(`File execution failed: ${(error as Error).message}`);
-        return {
-          message: `Error during file execution: ${(error as Error).message}`,
-        };
+        logger.error(`Docker execution failed: ${(error as Error).message}`);
+        return { message: `Error during file execution: ${(error as Error).message}` };
+      } finally {
+        await fs.unlink(pythonFilePath);
+        logger.success(`Python file deleted: ${pythonFilePath}`);
       }
     },
     {

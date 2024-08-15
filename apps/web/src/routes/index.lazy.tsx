@@ -20,14 +20,14 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
+/* -------------------------------- Constants ------------------------------- */
 // Accepted file types for the dropzone
 const ACCEPTED_FILE_TYPES = {
   'image/*': ['.png', '.jpg', '.jpeg'],
   'application/pdf': ['.pdf'],
 };
 // Programming languages supported by the application
-// TODO: Add more languages
-const LANGUAGES = [{ value: 'python', label: 'Python' }];
+const LANGUAGES = [{ value: 'python', label: 'Python' }]; // TODO: Add more languages
 
 export const Route = createLazyFileRoute('/')({
   component: Index,
@@ -46,8 +46,8 @@ function Index() {
       queryClient.invalidateQueries({ queryKey: ['fileStatus'] });
     },
     onError: (error: Error) => {
-      setMessage(error.message);
-      toast.error(`Error uploading file: ${error.message}`);
+      setMessage(error.message); // For console
+      toast.error(`Error uploading file. Refer to the console.`);
     },
   });
 
@@ -59,8 +59,8 @@ function Index() {
       queryClient.invalidateQueries({ queryKey: ['executionResult'] });
     },
     onError: (error: Error) => {
-      setMessage(error.message);
-      toast.error(`Error executing file: ${error.message}`);
+      setMessage(error.message); // For console
+      toast.error(`Error executing file. Refer to the console.`);
     },
   });
 
@@ -133,9 +133,7 @@ function Index() {
                           </label>
                           <p className="pl-1">or drag and drop</p>
                         </div>
-                        <p className="text-xs text-gray-500">PNG, JPG, JPEG, PDF</p>
-                        {/* TODO: File size limit */}
-                        {/* <p className="text-xs text-gray-500">PNG, JPG, JPEG, up to 10MB</p> */}
+                        <p className="text-xs text-gray-500">PNG, JPG, JPEG, up to 10MB</p>
                       </div>
                     )}
                   </div>
