@@ -6,7 +6,8 @@ import { toast } from 'sonner';
 
 import { executeFile, uploadFile } from '@/api';
 import useStore from '@/stores/useStore';
-import { UploadFileParams, UploadFileResponse } from '@/types';
+import { ALLOWED_FILE_TYPES, LANGUAGES } from '@/utils/constants.ts';
+import { FileExecutionResponse, FileUploadParams, FileUploadResponse } from '@shared/types';
 
 import { Console } from '@/components/console';
 import { Button } from '@/components/ui/button';
@@ -20,47 +21,38 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
-/* -------------------------------- Constants ------------------------------- */
-// Accepted file types for the dropzone
-const ACCEPTED_FILE_TYPES = {
-  'image/*': ['.png', '.jpg', '.jpeg'],
-  'application/pdf': ['.pdf'],
-};
-// Programming languages supported by the application
-const LANGUAGES = [{ value: 'python', label: 'Python' }]; // TODO: Add more languages
-
 export const Route = createLazyFileRoute('/')({
   component: Index,
 });
 
 function Index() {
-  const { file, language, message, setFile, setLanguage, setMessage } = useStore();
+  const { file, language, consoleMessage, setFile, setLanguage, setConsoleMessage } = useStore();
   const queryClient = useQueryClient();
 
   const uploadMutation = useMutation({
-    mutationFn: (data: UploadFileParams) => uploadFile(data),
-    onSuccess: (result: UploadFileResponse) => {
-      setMessage(result.message);
+    mutationFn: (data: FileUploadParams) => uploadFile(data),
+    onSuccess: (result: FileUploadResponse) => {
+      setConsoleMessage(result.message ?? '');
       toast.success('File uploaded successfully. Proceeding to execution...');
-      handleExecute(result.filePath); // Automatically trigger execution after upload
+      handleExecute(result.data?.uploadedFilePath || ''); // Automatically trigger execution after upload
       queryClient.invalidateQueries({ queryKey: ['fileStatus'] });
     },
     onError: (error: Error) => {
-      setMessage(error.message); // For console
-      toast.error(`Error uploading file. Refer to the console.`);
+      setConsoleMessage(error.message); // For console
+      toast.error(`Error uploading file. Check the console for details.`);
     },
   });
 
   const executeMutation = useMutation({
     mutationFn: (filePath: string) => executeFile(filePath),
-    onSuccess: (result) => {
-      setMessage(result.result);
-      toast.success('File executed successfully.');
+    onSuccess: (response: FileExecutionResponse) => {
+      setConsoleMessage(response.data?.output ?? '');
+      toast.success('File executed successfully');
       queryClient.invalidateQueries({ queryKey: ['executionResult'] });
     },
     onError: (error: Error) => {
-      setMessage(error.message); // For console
-      toast.error(`Error executing file. Refer to the console.`);
+      setConsoleMessage(error.message);
+      toast.error(`Error executing file. Check the console for details.`);
     },
   });
 
@@ -76,7 +68,7 @@ function Index() {
 
   const { getRootProps, getInputProps } = useDropzone({
     onDrop: (acceptedFiles) => setFile(acceptedFiles[0]),
-    accept: ACCEPTED_FILE_TYPES,
+    accept: ALLOWED_FILE_TYPES,
     multiple: false,
   });
 
@@ -86,7 +78,7 @@ function Index() {
   const getConsoleMessage = () => {
     if (isUploadPending) return 'Uploading file...';
     if (isExecutePending) return 'Executing file...';
-    return message;
+    return consoleMessage;
   };
 
   return (
@@ -133,7 +125,7 @@ function Index() {
                           </label>
                           <p className="pl-1">or drag and drop</p>
                         </div>
-                        <p className="text-xs text-gray-500">PNG, JPG, JPEG, up to 10MB</p>
+                        <p className="text-xs text-gray-500">PNG, JPG, JPEG, PDF up to 5MB</p>
                       </div>
                     )}
                   </div>
