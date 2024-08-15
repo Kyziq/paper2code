@@ -1,14 +1,28 @@
-export interface UploadFileParams {
+export interface FileUploadParams {
   file: File;
   language: string;
 }
 
-export interface UploadFileResponse {
+export interface ApiResponse<T = unknown> {
+  status: 'success' | 'error';
   message: string;
-  filePath: string;
+  data?: T;
 }
 
-export interface ExecuteFileResponse {
-  executionOutput: string;
-  executionError?: string;
+export interface FileUploadResponseData {
+  uploadedFilePath: string;
+}
+
+export type FileUploadResponse = ApiResponse<FileUploadResponseData>;
+
+export interface FileExecutionResponseData {
+  output: string;
+}
+
+export type FileExecutionResponse = ApiResponse<FileExecutionResponseData>;
+
+export interface ErrorResponse {
+  status: 'error';
+  message: string;
+  statusCode: number;
 }
