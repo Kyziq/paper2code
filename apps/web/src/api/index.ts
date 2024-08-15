@@ -1,3 +1,4 @@
+import { AxiosError } from 'axios';
 import { ExecuteFileResponse, UploadFileParams, UploadFileResponse } from '../types';
 import axiosInstance from './axiosInstance';
 
@@ -7,23 +8,37 @@ export const uploadFile = async (params: UploadFileParams): Promise<UploadFileRe
   formData.append('file', file);
   formData.append('language', language);
 
-  const response = await axiosInstance.post('/ocr', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-  });
-  return response.data;
+  try {
+    const response = await axiosInstance.post('/ocr', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  } catch (error) {
+    if (error instanceof AxiosError) {
+      throw new Error(error.message || 'An error occurred while uploading the file');
+    }
+    throw error;
+  }
 };
 
 export const executeFile = async (filePath: string): Promise<ExecuteFileResponse> => {
-  const response = await axiosInstance.post(
-    '/execute',
-    { filePath },
-    {
-      headers: {
-        'Content-Type': 'application/json',
+  try {
+    const response = await axiosInstance.post<ExecuteFileResponse>(
+      '/execute',
+      { filePath },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+        },
       },
-    },
-  );
-  return response.data;
+    );
+    return response.data;
+  } catch (error) {
+    if (error instanceof AxiosError) {
+      throw new Error(error.message || 'An error occurred while executing the file');
+    }
+    throw error;
+  }
 };
