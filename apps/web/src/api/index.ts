@@ -1,5 +1,5 @@
 import { FileExecutionResponse, FileUploadParams, FileUploadResponse } from '@shared/types';
-import axiosInstance from './axiosInstance';
+import kyInstance from './kyInstance';
 
 export const uploadFile = async (params: FileUploadParams): Promise<FileUploadResponse> => {
   const { file, language } = params;
@@ -8,10 +8,12 @@ export const uploadFile = async (params: FileUploadParams): Promise<FileUploadRe
   formData.append('language', language);
 
   try {
-    const response = await axiosInstance.post<FileUploadResponse>('/ocr', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
-    return response.data;
+    const response = await kyInstance
+      .post('ocr', {
+        body: formData,
+      })
+      .json<FileUploadResponse>();
+    return response;
   } catch (error) {
     if (error instanceof Error) {
       throw new Error(error.message);
@@ -22,14 +24,12 @@ export const uploadFile = async (params: FileUploadParams): Promise<FileUploadRe
 
 export const executeFile = async (filePath: string): Promise<FileExecutionResponse> => {
   try {
-    const response = await axiosInstance.post<FileExecutionResponse>(
-      '/execute',
-      { filePath },
-      {
-        headers: { 'Content-Type': 'application/json' },
-      },
-    );
-    return response.data;
+    const response = await kyInstance
+      .post('execute', {
+        json: { filePath },
+      })
+      .json<FileExecutionResponse>();
+    return response;
   } catch (error) {
     if (error instanceof Error) {
       throw new Error(error.message);
