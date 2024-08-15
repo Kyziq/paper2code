@@ -97,7 +97,7 @@ export const performOCR = async (file: File): Promise<string> => {
     // Ensure attempt to delete the file whether OCR succeeds or fails
     try {
       await storage.bucket(bucketName).file(file.name).delete();
-      logger.info(`File deleted from bucket}: ${file.name}`);
+      logger.info(`File deleted from bucket: ${file.name}`);
     } catch (deleteError) {
       logger.error(`Failed to delete file from bucket: ${deleteError}`);
     }
