@@ -16,7 +16,7 @@ const checkDockerRunning = (): Promise<boolean> => {
   });
 };
 
-export const runDockerContainer = async (filePath: string, fileName: string): Promise<string> => {
+export const runDockerContainer = async (fileName: string): Promise<string> => {
   const isDockerRunning = await checkDockerRunning();
   if (!isDockerRunning)
     throw new Error(`Docker is not running. Please start Docker and try again.`);
