@@ -24,21 +24,33 @@ const app = new Elysia()
     '/api/ocr',
     async ({ body, set }): Promise<FileUploadResponse> => {
       const file = body.file[0];
-      if (!file) throw new BadRequestError('No file uploaded');
-      if (!ALLOWED_FILE_TYPES.includes(file.type))
+      if (!file) {
+        logger.error('No file uploaded');
+        throw new BadRequestError('No file uploaded');
+      }
+      logger.info(`Received file: ${file.name} (${file.type})`);
+
+      if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+        logger.warning(`Unsupported file type: ${file.type}`);
         throw new UnsupportedMediaTypeError(`Unsupported file type ${file.type}`);
+      }
 
       const sizeLimit = file.type.startsWith('image/')
         ? FILE_SIZE_LIMITS['image/*']
         : FILE_SIZE_LIMITS[file.type as keyof typeof FILE_SIZE_LIMITS];
-      if (file.size > sizeLimit)
+      if (file.size > sizeLimit) {
+        logger.warning(
+          `File size (${(file.size / (1024 * 1024)).toFixed(2)} MB) exceeds limit (${sizeLimit / (1024 * 1024)} MB)`,
+        );
         throw new PayloadTooLargeError(
           `Your ${file.type} file size is ${(file.size / (1024 * 1024)).toFixed(2)} MB. It should be less than ${sizeLimit / (1024 * 1024)} MB`,
         );
+      }
 
       try {
-        logger.info(`Processing ${file.type} file...`);
+        logger.info(`Processing ${file.type} file: ${file.name}`);
         const text = await performOCR(file);
+        logger.ocr(`OCR completed for ${file.name}`);
 
         const pythonFileName = `ocr_result_${Date.now()}.py`;
         const pythonFilePath = path.resolve(tempDir, pythonFileName);
@@ -46,17 +58,15 @@ const app = new Elysia()
         logger.success(`Python file created: ${pythonFilePath}`);
 
         return {
-          status: 'success',
           message: 'Text extraction successful',
           data: {
             uploadedFilePath: pythonFilePath,
           },
         };
       } catch (error) {
-        logger.error(`OCR processing failed. ${(error as Error).message}`);
+        logger.error(`OCR processing failed for ${file.name}. ${(error as Error).message}`);
         set.status = 500;
         return {
-          status: 'error',
           message: `Error during OCR processing. ${(error as Error).message}`,
         };
       }
@@ -67,7 +77,6 @@ const app = new Elysia()
       }),
       type: 'formdata',
       response: t.Object({
-        status: t.Union([t.Literal('success'), t.Literal('error')]),
         message: t.String(),
         data: t.Optional(
           t.Object({
@@ -82,21 +91,22 @@ const app = new Elysia()
     async ({ body }): Promise<FileExecutionResponse> => {
       const pythonFilePath = body.filePath;
       if (!pythonFilePath) {
+        logger.error('No file path provided for execution');
         throw new BadRequestError('No file path provided');
       }
 
       const fileName = path.basename(pythonFilePath);
-      logger.info(`Executing file: ${fileName}`);
+      logger.docker(`Preparing to execute file: ${fileName}`);
       try {
         const output = await runDockerContainer(fileName);
-        logger.info(`Execution output preview: ${output}`);
+        logger.docker(`Execution completed for ${fileName}`);
+        logger.debug(`Execution output:\n${output}`);
         return {
-          status: 'success',
           message: 'File execution successful',
           data: { output },
         };
       } catch (error) {
-        logger.error(`Execution failed. ${(error as Error).message}`);
+        logger.error(`Execution failed for ${fileName}. ${(error as Error).message}`);
         throw new Error(`Error during file execution. ${(error as Error).message}`);
       }
     },
@@ -106,7 +116,6 @@ const app = new Elysia()
       }),
       type: 'json',
       response: t.Object({
-        status: t.Union([t.Literal('success'), t.Literal('error')]),
         message: t.String(),
         data: t.Optional(
           t.Object({
