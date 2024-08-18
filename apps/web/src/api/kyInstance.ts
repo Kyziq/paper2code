@@ -5,13 +5,13 @@ const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 
 const kyInstance = ky.extend({
   prefixUrl: `${apiBaseUrl}/api`,
-  timeout: 10000,
+  timeout: 30000,
   hooks: {
     afterResponse: [
       async (_request, _options, response) => {
         if (!response.ok) {
           const errorData: ErrorResponse = await response.json();
-          throw new Error(errorData.message || `Error ${response.status}`);
+          throw new Error(errorData.message || `Error ${errorData.statusCode}`);
         }
       },
     ],
