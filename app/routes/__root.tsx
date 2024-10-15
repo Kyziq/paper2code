@@ -1,4 +1,4 @@
-import { createRootRoute } from "@tanstack/react-router";
+import { Link, createRootRoute } from "@tanstack/react-router";
 import { Outlet, ScrollRestoration } from "@tanstack/react-router";
 import { Body, Head, Html, Meta, Scripts } from "@tanstack/start";
 import type * as React from "react";
@@ -37,6 +37,12 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 				<Meta />
 			</Head>
 			<Body>
+				<div className="p-2 flex gap-2 text-lg font-bold">
+					<Link to="/" activeProps={{}} activeOptions={{ exact: true }}>
+						paper2code
+					</Link>
+				</div>
+				<hr />
 				{children}
 				<ScrollRestoration />
 				<Scripts />
