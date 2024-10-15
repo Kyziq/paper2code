@@ -2,6 +2,7 @@ import { createRootRoute } from "@tanstack/react-router";
 import { Outlet, ScrollRestoration } from "@tanstack/react-router";
 import { Body, Head, Html, Meta, Scripts } from "@tanstack/start";
 import type * as React from "react";
+import { NotFound } from "~/components/NotFound";
 import "~/styles/app.css";
 
 export const Route = createRootRoute({
@@ -14,9 +15,10 @@ export const Route = createRootRoute({
 			content: "width=device-width, initial-scale=1",
 		},
 		{
-			title: "TanStack Start Starter",
+			title: "paper2code",
 		},
 	],
+	notFoundComponent: () => <NotFound />,
 	component: RootComponent,
 });
 
