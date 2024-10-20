@@ -30,7 +30,7 @@ if (rootElement) {
 			<QueryClientProvider client={queryClient}>
 				<RouterProvider router={router} />
 				<Toaster
-					position="bottom-center"
+					position="bottom-right"
 					richColors
 					closeButton
 					duration={5000}
