@@ -28,7 +28,6 @@
 		"zustand": "^4.5.4"
 	},
 	"devDependencies": {
-		"@tanstack/router-devtools": "^1.47.1",
 		"@tanstack/router-plugin": "^1.47.0",
 		"@types/bun": "^1.1.6",
 		"@types/node": "^22.2.0",
