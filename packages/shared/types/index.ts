@@ -4,7 +4,6 @@ export interface FileUploadParams {
 }
 
 export interface ApiResponse<T = unknown> {
-  status: 'success' | 'error';
   message: string;
   data?: T;
 }
@@ -22,7 +21,6 @@ export interface FileExecutionResponseData {
 export type FileExecutionResponse = ApiResponse<FileExecutionResponseData>;
 
 export interface ErrorResponse {
-  status: 'error';
   message: string;
   statusCode: number;
 }
