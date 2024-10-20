@@ -93,8 +93,8 @@ function Index() {
 	};
 
 	return (
-		<div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8">
-			<div className="mx-auto max-w-6xl overflow-hidden rounded-2xl bg-white shadow-xl">
+		<div className="p-4 sm:p-6 lg:p-8 flex-grow flex items-center justify-center">
+			<div className="w-full max-w-6xl overflow-hidden rounded-2xl bg-white shadow-xl">
 				<div className="flex flex-col md:flex-row">
 					{/* Left Section */}
 					<div className="bg-white p-8 md:w-1/2">
