@@ -5,18 +5,17 @@
   "scripts": {
     "build": "turbo build",
     "dev": "turbo dev",
-    "lint": "turbo lint",
-    "format": "bun prettier --write \"**/*.{js,jsx,ts,tsx,css}"
+    "format-and-lint": "biome check .",
+    "format-and-lint:fix": "biome check . --write"
   },
   "devDependencies": {
+    "@biomejs/biome": "1.9.3",
     "dotenv": "^16.4.5",
     "prettier": "^3.3.3",
     "turbo": "^2.0.12",
-    "typescript": "^5.5.4",
-    "prettier-plugin-organize-imports": "^4.0.0",
-    "prettier-plugin-tailwindcss": "^0.6.6"
+    "typescript": "^5.5.4"
   },
-  "packageManager": "bun@1.1.23",
+  "packageManager": "bun@1.1.29",
   "engines": {
     "node": ">=18",
     "bun": ">=1.0.0"
@@ -24,5 +23,9 @@
   "workspaces": [
     "apps/*",
     "packages/*"
+  ],
+  "trustedDependencies": [
+    "@biomejs/biome",
+    "protobufjs"
   ]
 }
