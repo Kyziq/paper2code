@@ -5,7 +5,7 @@ import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
 
 import { executeFile, uploadFile } from "@/api";
-import useStore from "@/stores/useStore";
+import { useStore } from "@/stores/useStore";
 import { ALLOWED_FILE_TYPES, LANGUAGES } from "@/utils/constants.ts";
 import type {
 	FileExecutionResponse,
@@ -69,7 +69,7 @@ function Index() {
 
 	const handleUpload = () => {
 		if (!language) return toast.error("Please select a language.");
-		if (!file) return toast.error("Please select a file.");
+		if (!file) return toast.error("Please upload a file.");
 		uploadMutation.mutate({ file, language });
 	};
 
@@ -93,22 +93,23 @@ function Index() {
 	};
 
 	return (
-		<div className="p-4 sm:p-6 lg:p-8 flex-grow flex items-center justify-center">
-			<div className="w-full max-w-6xl overflow-hidden rounded-2xl bg-white shadow-xl">
+		<div className="flex-grow flex items-center justify-center p-4 sm:p-6 lg:p-8">
+			<div className="w-full max-w-6xl overflow-hidden rounded-2xl shadow-xl transition-all duration-200">
 				<div className="flex flex-col md:flex-row">
 					{/* Left Section */}
-					<div className="bg-white p-8 md:w-1/2">
-						<h1 className="mb-2 text-4xl font-extrabold text-gray-900">
+					<div className="p-8 md:w-1/2 bg-white dark:bg-gray-800 transition-all duration-200">
+						<h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent mb-2">
 							paper2code
 						</h1>
-						<p className="mb-8 text-indigo-600">
+						<p className="mb-8 text-slate-600 dark:text-slate-300">
 							Execute your handwritten code with ease.
 						</p>
+
 						<div className="space-y-6">
 							<div>
 								<Label
 									htmlFor="language-select"
-									className="mb-1 text-sm font-medium text-gray-700"
+									className="text-sm font-medium text-slate-700 dark:text-slate-200"
 								>
 									Programming Language
 								</Label>
@@ -116,10 +117,13 @@ function Index() {
 									onValueChange={setLanguage}
 									value={language || undefined}
 								>
-									<SelectTrigger id="language-select" className="w-[200px]">
+									<SelectTrigger
+										id="language-select"
+										className="w-full mt-1 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700"
+									>
 										<SelectValue placeholder="Choose a language..." />
 									</SelectTrigger>
-									<SelectContent>
+									<SelectContent className="bg-white dark:bg-slate-900">
 										{LANGUAGES.map(({ value, label }) => (
 											<SelectItem key={value} value={value}>
 												{label}
@@ -131,24 +135,35 @@ function Index() {
 
 							{/* File Upload Section */}
 							<div>
-								<Label className="mb-1 text-sm font-medium text-gray-700">
+								<Label className="text-sm font-medium text-slate-700 dark:text-slate-200">
 									Code File
 								</Label>
-								<div className="mt-1 flex justify-center rounded-lg border-2 border-dashed border-gray-300 px-6 pb-6 pt-5 transition-colors hover:border-indigo-500">
-									<div {...getRootProps()} className="space-y-1 text-center">
+								<div
+									className="mt-1 rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-700
+                    hover:border-blue-500 dark:hover:border-blue-400 transition-colors duration-200
+                    bg-white/50 dark:bg-slate-900/50"
+								>
+									<div
+										{...getRootProps()}
+										className="px-6 py-8 text-center cursor-pointer"
+									>
 										<input {...getInputProps()} />
 										{file ? (
-											<p className="text-gray-700">{file.name}</p>
+											<p className="text-slate-700 dark:text-slate-200">
+												{file.name}
+											</p>
 										) : (
 											<div>
-												<FileText className="mx-auto h-12 w-12 text-gray-400" />
-												<div className="flex text-sm text-gray-600">
-													<span className="relative cursor-pointer rounded-md bg-white font-medium text-indigo-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2 hover:text-indigo-500">
-														<span>Upload a file</span>
+												<FileText className="mx-auto h-12 w-12 text-blue-500 dark:text-blue-400 mb-3" />
+												<div className="flex justify-center text-sm">
+													<span className="font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500">
+														Upload a file
 													</span>
-													<span className="pl-1">or drag and drop</span>
+													<span className="pl-1 text-slate-600 dark:text-slate-400">
+														or drag and drop
+													</span>
 												</div>
-												<p className="text-xs text-gray-500">
+												<p className="text-xs text-slate-500 dark:text-slate-400">
 													PNG, JPG, JPEG, PDF up to 5MB
 												</p>
 											</div>
@@ -156,14 +171,17 @@ function Index() {
 									</div>
 								</div>
 							</div>
+
 							{/* Upload Button */}
 							<Button
-								className="flex w-full items-center justify-center bg-indigo-600 text-white hover:bg-indigo-700"
+								className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700
+                  dark:from-blue-500 dark:to-indigo-500 dark:hover:from-blue-600 dark:hover:to-indigo-600
+                  text-white shadow-lg hover:shadow-xl transition-all duration-200"
 								onClick={handleUpload}
 								disabled={isProcessing}
 							>
 								{isProcessing ? (
-									<LoadingSpinner className="h-6 w-6 border-white border-t-indigo-600" />
+									<LoadingSpinner className="h-5 w-5 border-white border-t-transparent" />
 								) : (
 									<>
 										<Upload className="mr-2 h-4 w-4" />
@@ -175,7 +193,7 @@ function Index() {
 					</div>
 
 					{/* Right Section */}
-					<div className="flex flex-col items-center justify-center bg-white p-6 md:w-1/2">
+					<div className="flex flex-col items-center justify-center p-6 md:w-1/2 bg-white dark:bg-gray-800 transition-all duration-200">
 						<Console message={getConsoleMessage()} />
 					</div>
 				</div>

@@ -1,24 +1,29 @@
+import { ModeToggle } from "@/components/mode-toggle";
+import { ThemeProvider } from "@/components/theme-provider";
 import { Link, Outlet, createRootRoute } from "@tanstack/react-router";
 
 export const Route = createRootRoute({
 	component: () => (
-		<div className="flex flex-col min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-			<header className="bg-white shadow-sm">
-				<nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-					<div className="flex justify-between h-16">
-						<div className="flex">
-							<Link to="/" className="flex-shrink-0 flex items-center">
-								<span className="text-lg font-semibold text-gray-900">
-									paper2code
-								</span>
-							</Link>
+		<ThemeProvider>
+			<div className="flex flex-col min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+				<header className="shadow-sm">
+					<nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+						<div className="flex justify-between items-center h-14">
+							<div className="items-center">
+								<Link to="/" className="flex-shrink-0">
+									<h3 className="text-lg font-semibold">paper2code</h3>
+								</Link>
+							</div>
+							<div className="items-center">
+								<ModeToggle />
+							</div>
 						</div>
-					</div>
-				</nav>
-			</header>
-			<main className="flex-grow">
-				<Outlet />
-			</main>
-		</div>
+					</nav>
+				</header>
+				<main className="flex-grow">
+					<Outlet />
+				</main>
+			</div>
+		</ThemeProvider>
 	),
 });

@@ -9,7 +9,7 @@ interface Store {
 	setConsoleMessage: (consoleMessage: string) => void;
 }
 
-const useStore = create<Store>()((set) => ({
+export const useStore = create<Store>()((set) => ({
 	file: null,
 	language: null,
 	consoleMessage: "",
@@ -17,5 +17,3 @@ const useStore = create<Store>()((set) => ({
 	setLanguage: (language) => set({ language }),
 	setConsoleMessage: (consoleMessage) => set({ consoleMessage }),
 }));
-
-export default useStore;
