@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import type React from "react";
-import { useThemeStore } from "../stores/useThemeStore";
+import { useThemeStore } from "~/stores/useThemeStore";
 
 type ThemeProviderProps = {
 	children: React.ReactNode;

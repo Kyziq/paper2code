@@ -1,6 +1,6 @@
-import { ModeToggle } from "@/components/mode-toggle";
-import { ThemeProvider } from "@/components/theme-provider";
 import { Link, Outlet, createRootRoute } from "@tanstack/react-router";
+import { ModeToggle } from "~/components/mode-toggle";
+import { ThemeProvider } from "~/components/theme-provider";
 
 export const Route = createRootRoute({
 	component: () => (

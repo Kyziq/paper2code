@@ -3,7 +3,7 @@ import path from "path";
 import { Storage } from "@google-cloud/storage";
 import vision from "@google-cloud/vision";
 import dotenv from "dotenv";
-import { logger } from "../utils/logger";
+import { logger } from "~/utils/logger";
 
 dotenv.config({ path: path.resolve(__dirname, "../../../../.env") });
 const client = new vision.ImageAnnotatorClient({

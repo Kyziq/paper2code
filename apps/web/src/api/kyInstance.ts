@@ -1,5 +1,5 @@
-import type { ErrorResponse } from "@shared/types";
 import ky from "ky";
+import type { ErrorResponse } from "~shared/types";
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 

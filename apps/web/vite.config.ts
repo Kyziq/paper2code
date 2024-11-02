@@ -12,7 +12,7 @@ export default defineConfig({
 	resolve: {
 		alias: {
 			"@": path.resolve(__dirname, "./src"),
-			"@shared": path.resolve(__dirname, "../../packages/shared"),
+			"~/shared": path.resolve(__dirname, "../../packages/shared"),
 		},
 	},
 	envPrefix: "VITE_API_BASE_URL",

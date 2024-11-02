@@ -1,9 +1,9 @@
+import kyInstance from "~/api/kyInstance";
 import type {
 	FileExecutionResponse,
 	FileUploadParams,
 	FileUploadResponse,
-} from "@shared/types";
-import kyInstance from "./kyInstance";
+} from "~shared/types";
 
 export const uploadFile = async (
 	params: FileUploadParams,

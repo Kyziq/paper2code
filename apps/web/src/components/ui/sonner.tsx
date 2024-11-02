@@ -1,5 +1,5 @@
 import { Toaster as Sonner } from "sonner";
-import { useThemeStore } from "@/stores/useThemeStore";
+import { useThemeStore } from "~/stores/useThemeStore";
 
 type ToasterProps = React.ComponentProps<typeof Sonner>;
 

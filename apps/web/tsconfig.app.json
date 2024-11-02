@@ -11,8 +11,8 @@
 		"rootDir": "../../../",
 		"baseUrl": ".",
 		"paths": {
-			"@/*": ["./src/*"],
-			"@shared/*": ["../../packages/shared/*"]
+			"~/*": ["./src/*"],
+			"~shared/*": ["../../packages/shared/*"]
 		},
 
 		"moduleResolution": "bundler",

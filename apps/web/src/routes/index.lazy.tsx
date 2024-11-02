@@ -4,26 +4,26 @@ import { FileText, Upload } from "lucide-react";
 import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
 
-import { executeFile, uploadFile } from "@/api";
-import { useStore } from "@/stores/useStore";
-import { ALLOWED_FILE_TYPES, LANGUAGES } from "@/utils/constants.ts";
+import { executeFile, uploadFile } from "~/api";
+import { useStore } from "~/stores/useStore";
+import { ALLOWED_FILE_TYPES, LANGUAGES } from "~/utils/constants.ts";
 import type {
 	FileExecutionResponse,
 	FileUploadParams,
 	FileUploadResponse,
-} from "@shared/types";
+} from "~shared/types";
 
-import { Console } from "@/components/console";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { Console } from "~/components/console";
+import { Button } from "~/components/ui/button";
+import { Label } from "~/components/ui/label";
+import { LoadingSpinner } from "~/components/ui/loading-spinner";
 import {
 	Select,
 	SelectContent,
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
-} from "@/components/ui/select";
+} from "~/components/ui/select";
 
 export const Route = createLazyFileRoute("/")({
 	component: Index,
