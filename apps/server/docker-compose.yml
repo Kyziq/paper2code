@@ -1,0 +1,11 @@
+services:
+  python-runner:
+    build: .
+    volumes:
+      - type: bind
+        source: ./temp
+        target: /code
+    command: tail -f /dev/null
+    container_name: python-script-runner
+    init: true
+    restart: unless-stopped

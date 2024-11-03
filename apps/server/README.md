@@ -1,3 +1,2 @@
-docker pull python:3.9-slim
-
-bun dev
+docker compose up -d
+docker compose down -v --remove-orphans
