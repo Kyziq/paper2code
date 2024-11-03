@@ -4,7 +4,6 @@ import { cors } from "@elysiajs/cors";
 import { Elysia, t } from "elysia";
 import { runDockerContainer } from "~/services/dockerService";
 import { performOCR } from "~/services/ocrService";
-import type { FileExecutionResponse, FileUploadResponse } from "~shared/types";
 import { ALLOWED_FILE_TYPES, FILE_SIZE_LIMITS } from "~/utils/constants";
 import {
 	ApiError,
@@ -14,6 +13,7 @@ import {
 } from "~/utils/errors";
 import { setupTempDirectory, tempDir } from "~/utils/fileSystem";
 import { logger } from "~/utils/logger";
+import type { FileExecutionResponse, FileUploadResponse } from "~shared/types";
 
 setupTempDirectory();
 
