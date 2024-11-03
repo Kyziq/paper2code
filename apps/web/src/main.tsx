@@ -1,14 +1,14 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import "./styles/fonts.css";
-import "./styles/index.css";
+import "~/styles/fonts.css";
+import "~/styles/index.css";
 
 import { RouterProvider, createRouter } from "@tanstack/react-router";
 import { Toaster } from "~/components/ui/sonner";
 
 // Import the generated route tree
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { routeTree } from "./routeTree.gen";
+import { routeTree } from "~/routeTree.gen";
 
 // Create a new router instance
 const router = createRouter({ routeTree });
