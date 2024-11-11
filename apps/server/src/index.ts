@@ -23,7 +23,6 @@ import { logger } from "~/utils/logger";
 import type { FileExecutionResponse, FileUploadResponse } from "~shared/types";
 
 await initializeDockerService().catch((error) => {
-	logger.error(`Failed to initialize Docker service: ${error}`);
 	process.exit(1);
 });
 
