@@ -26,7 +26,7 @@ export const ocrRoute = new Elysia().post(
 		logger.info(`Received file: ${file.name} (${file.type})`);
 
 		if (!ALLOWED_FILE_TYPES.includes(file.type)) {
-			logger.warning(`Unsupported file type: ${file.type}`);
+			logger.warn(`Unsupported file type: ${file.type}`);
 			throw new UnsupportedMediaTypeError(`Unsupported file type ${file.type}`);
 		}
 
@@ -35,7 +35,7 @@ export const ocrRoute = new Elysia().post(
 			: FILE_SIZE_LIMITS[file.type as keyof typeof FILE_SIZE_LIMITS];
 
 		if (file.size > sizeLimit) {
-			logger.warning(
+			logger.warn(
 				`File size (${(file.size / (1024 * 1024)).toFixed(2)} MB) exceeds limit`,
 			);
 			throw new PayloadTooLargeError(

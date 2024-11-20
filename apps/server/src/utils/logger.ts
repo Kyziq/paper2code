@@ -1,3 +1,4 @@
+import path from "node:path";
 import type { protos } from "@google-cloud/vision";
 import pc from "picocolors";
 
@@ -11,6 +12,7 @@ type LogLevel =
 	| "ocr"
 	| "docker"
 	| "delete";
+
 type FullTextAnnotation = protos.google.cloud.vision.v1.ITextAnnotation;
 
 const logConfig = {
@@ -19,103 +21,152 @@ const logConfig = {
 		warn: { icon: "⚠️", color: pc.yellow },
 		error: { icon: "❌", color: pc.red },
 		success: { icon: "✅", color: pc.green },
-		debug: { icon: "🐛", color: pc.gray },
+		debug: { icon: "🐛", color: pc.magenta },
 		api: { icon: "🔗", color: pc.blue },
 		ocr: { icon: "🔍", color: pc.magenta },
-		docker: { icon: "🐳", color: pc.magenta },
+		docker: { icon: "🐳", color: pc.cyan },
 		delete: { icon: "🗑️", color: pc.red },
 	},
 	isProd: import.meta.env?.PROD,
+	// Base directory to show relative paths from
+	baseDir: path.resolve("apps/server"),
 };
 
 class Logger {
+	private formatPath(filepath: string): string {
+		try {
+			// Convert absolute path to relative path from baseDir
+			const relativePath = path.relative(logConfig.baseDir, filepath);
+
+			// If the path is still too long, show just the last 2-3 segments
+			if (relativePath.length > 50) {
+				const parts = relativePath.split(path.sep);
+				return pc.dim(`.../${parts.slice(-2).join("/")}`);
+			}
+
+			return pc.dim(relativePath);
+		} catch {
+			// If there's any error in path processing, return the original
+			return filepath;
+		}
+	}
+
+	private formatFilename(filename: string): string {
+		// Common file patterns
+		const filePatterns = [
+			/^[\w-]+\.(?:jpg|jpeg|png|gif|pdf)$/i, // Image/PDF files
+			/^[\w-]+_\d+\.[\w]+$/i, // Files with timestamps
+			/^ocr_result_\d+\.[\w]+$/i, // OCR result files
+		];
+
+		if (filePatterns.some((pattern) => pattern.test(filename))) {
+			// Make filenames stand out with bold and a different color
+			return pc.bold(pc.blue(filename));
+		}
+
+		return pc.dim(filename);
+	}
+
 	private getTimestamp() {
 		const now = new Date();
-
 		const date = [
 			now.getDate().toString().padStart(2, "0"),
 			(now.getMonth() + 1).toString().padStart(2, "0"),
 			now.getFullYear(),
 		].join("/");
-
 		const hours = now.getHours();
 		const ampm = hours >= 12 ? "PM" : "AM";
 		const hour12 = hours % 12 || 12;
-
 		const time = [
 			hour12,
 			now.getMinutes().toString().padStart(2, "0"),
 			now.getSeconds().toString().padStart(2, "0"),
 		].join(":");
-
 		const ms = now.getMilliseconds().toString().padStart(3, "0");
+		return pc.dim(`[${date} | ${time}.${ms} ${ampm}]`);
+	}
 
-		return pc.gray(`[${date} | ${time}.${ms} ${ampm}]`);
+	private formatMessage(message: unknown): string {
+		const messageStr = typeof message !== "string" ? String(message) : message;
+
+		// First handle full paths
+		const withFormattedPaths = messageStr.replace(
+			/(^|[^\\])([A-Z]:\\(?:[^\\]+\\)*[^\\]+)/g,
+			(_: string, prefix: string, filepath: string) =>
+				prefix + this.formatPath(filepath),
+		);
+
+		// Then handle filenames
+		return withFormattedPaths.replace(
+			/(?:^|\s|\/)([\w-]+(?:_\d+)?\.[\w]+)(?=\s|$|\/)/g,
+			(matchStr: string, filename: string, offset: number) => {
+				// Preserve any leading whitespace/characters
+				const prefix = matchStr.substring(0, matchStr.indexOf(filename));
+				return prefix + this.formatFilename(filename);
+			},
+		);
 	}
 
 	private log(level: LogLevel, message: unknown) {
 		if (logConfig.isProd) return;
-
 		const { icon, color } = logConfig.styles[level];
-		const prefix = `${icon} ${pc.bold(`[${level.toUpperCase()}]`)}`;
-		const formattedMessage = `${this.getTimestamp()} ${color(prefix)} ${message}`;
-
+		const prefix = `${icon} ${color(pc.bold(`[${level.toUpperCase()}]`))}`;
+		const formattedMessage = `${this.getTimestamp()} ${prefix} ${this.formatMessage(message)}`;
 		console[level === "error" ? "error" : "log"](formattedMessage);
 	}
 
-	info = (message: string) => this.log("info", message);
-	warn = (message: string) => this.log("warn", message);
-	error = (message: string) => this.log("error", message);
-	success = (message: string) => this.log("success", message);
-	debug = (message: string) => this.log("debug", message);
-	api = (message: string) => this.log("api", message);
-	ocr = (message: string) => this.log("ocr", message);
-	docker = (message: string) => this.log("docker", message);
-	delete = (message: string) => this.log("delete", message);
+	info = (message: unknown) => this.log("info", message);
+	warn = (message: unknown) => this.log("warn", message);
+	error = (message: unknown) => this.log("error", message);
+	success = (message: unknown) => this.log("success", message);
+	debug = (message: unknown) => this.log("debug", message);
+	api = (message: unknown) => this.log("api", message);
+	ocr = (message: unknown) => this.log("ocr", message);
+	docker = (message: unknown) => this.log("docker", message);
+	delete = (message: unknown) => this.log("delete", message);
 
 	logOCR(data: FullTextAnnotation, type: "image" | "pdf") {
 		if (logConfig.isProd) return;
-
 		console.log("");
-		this.info(
-			pc.bgCyan(pc.black(`----- OCR Results (${type.toUpperCase()}) -----`)),
-		);
+		this.info(pc.cyan(`----- OCR Results (${type.toUpperCase()}) -----`));
 
 		data.pages?.forEach((page, pageIdx) => {
-			this.info(pc.bgWhite(pc.black(`----- Page ${pageIdx + 1} -----`)));
+			this.info(pc.cyan(`----- Page ${pageIdx + 1} -----`));
 
 			page.blocks?.forEach((block, blockIdx) => {
 				console.log(
-					pc.bgYellow(
-						pc.black(
-							`Block ${blockIdx + 1} - Confidence: ${block.confidence?.toFixed(2) ?? "N/A"}`,
-						),
+					pc.blue(
+						`Block ${blockIdx + 1} - Confidence: ${this.formatConfidence(
+							block.confidence,
+						)}`,
 					),
 				);
 
 				block.paragraphs?.forEach((paragraph, paragraphIndex) => {
 					console.log(
-						pc.bgGreen(
-							pc.black(
-								`  Paragraph ${paragraphIndex + 1} - Confidence: ${paragraph.confidence?.toFixed(2) ?? "N/A"}`,
-							),
+						pc.magenta(
+							`  Paragraph ${paragraphIndex + 1} - Confidence: ${this.formatConfidence(
+								paragraph.confidence,
+							)}`,
 						),
 					);
+
 					paragraph.words?.forEach((word, wordIndex) => {
 						const wordText = word.symbols?.map((s) => s.text).join("") ?? "";
+						const confidence = this.getConfidenceColor(word.confidence);
 						console.log(
-							pc.bgBlue(
-								pc.white(
-									`    Word ${wordIndex + 1}: ${wordText} - Confidence: ${word.confidence?.toFixed(2) ?? "N/A"}`,
-								),
+							pc.gray(
+								`    Word ${wordIndex + 1}: ${pc.white(wordText)} - Confidence: ${confidence}`,
 							),
 						);
+
 						word.symbols?.forEach((symbol, symbolIndex) => {
+							const symbolConfidence = this.getConfidenceColor(
+								symbol.confidence,
+							);
 							console.log(
-								pc.bgMagenta(
-									pc.white(
-										`      Symbol ${symbolIndex + 1}: ${symbol.text} - Confidence: ${symbol.confidence?.toFixed(2) ?? "N/A"}`,
-									),
+								pc.gray(
+									`      Symbol ${symbolIndex + 1}: ${pc.white(symbol.text)} - Confidence: ${symbolConfidence}`,
 								),
 							);
 						});
@@ -124,6 +175,22 @@ class Logger {
 			});
 		});
 		console.log("");
+	}
+
+	private formatConfidence(confidence: number | null | undefined): string {
+		return confidence?.toFixed(2) ?? "N/A";
+	}
+
+	private getConfidenceColor(confidence: number | null | undefined): string {
+		if (!confidence) return pc.yellow("N/A");
+
+		if (confidence >= 0.9) {
+			return pc.green(confidence.toFixed(2));
+		}
+		if (confidence >= 0.7) {
+			return pc.yellow(confidence.toFixed(2));
+		}
+		return pc.red(confidence.toFixed(2));
 	}
 }
 
