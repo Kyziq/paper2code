@@ -1,5 +1,5 @@
 import path, { resolve } from "node:path";
-import { TanStackRouterVite } from "@tanstack/router-plugin/vite";
+import { TanStackRouterVite } from "@tanstack/router-vite-plugin";
 import react from "@vitejs/plugin-react-swc";
 import dotenv from "dotenv";
 import { defineConfig } from "vite";
