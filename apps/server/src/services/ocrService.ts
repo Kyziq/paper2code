@@ -1,5 +1,4 @@
-// biome-ignore lint/style/useNodejsImportProtocol: <explanation>
-import path from "path";
+import path from "node:path";
 import { Storage } from "@google-cloud/storage";
 import vision from "@google-cloud/vision";
 import dotenv from "dotenv";
@@ -41,9 +40,11 @@ async function createBucketIfNotExists() {
 export const handleImage = async (fileName: string): Promise<string> => {
 	logger.ocr(`Starting OCR process for image: ${fileName}`);
 	try {
+		const gcsSourceUri = `gs://${bucketName}/${fileName}`;
+
 		const [result] = await client.documentTextDetection({
 			image: {
-				source: { imageUri: `gs://${bucketName}/${fileName}` },
+				source: { imageUri: gcsSourceUri },
 			},
 			imageContext: {
 				// specifies English language (en), transform extension singleton (t),
@@ -57,8 +58,8 @@ export const handleImage = async (fileName: string): Promise<string> => {
 			throw new Error("No text detected in the image.");
 
 		logger.ocr(`OCR completed for image: ${fileName}`);
-		logger.ocr(`Detected text: ${fullTextAnnotation.text.trim()}`);
-		logger.logDetailedOCRResults(fullTextAnnotation, "image");
+		logger.ocr(`Detected text: \n${fullTextAnnotation.text.trim()}`);
+		logger.logOCR(fullTextAnnotation, "image");
 		return fullTextAnnotation.text.trim();
 	} catch (error) {
 		throw new Error(`Failed to perform OCR on image ${fileName}: ${error}`);
@@ -99,7 +100,7 @@ export const performOCR = async (file: File): Promise<string> => {
 		}
 
 		if (!text) {
-			logger.warning(`No text detected in the file: ${file.name}`);
+			logger.warn(`No text detected in the file: ${file.name}`);
 			throw new Error("No text detected in the file");
 		}
 
