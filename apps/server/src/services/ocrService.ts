@@ -1,19 +1,16 @@
-import path from "node:path";
 import { Storage } from "@google-cloud/storage";
 import vision from "@google-cloud/vision";
-import dotenv from "dotenv";
 import { logger } from "~/utils/logger";
 
-dotenv.config({ path: path.resolve(__dirname, "../../../../.env") });
 const client = new vision.ImageAnnotatorClient({
-	keyFilename: process.env.GCP_SERVICE_ACCOUNT_KEY_PATH,
+	keyFilename: Bun.env.GCP_SERVICE_ACCOUNT_KEY_PATH,
 });
 const storage = new Storage({
-	keyFilename: process.env.GCP_SERVICE_ACCOUNT_KEY_PATH,
+	keyFilename: Bun.env.GCP_SERVICE_ACCOUNT_KEY_PATH,
 });
-const bucketName = process.env.GCP_STORAGE_BUCKET_NAME ?? "";
-const storageClass = process.env.GCP_STORAGE_CLASS ?? "";
-const location = process.env.GCP_STORAGE_LOCATION ?? "";
+const bucketName = Bun.env.GCP_STORAGE_BUCKET_NAME ?? "";
+const storageClass = Bun.env.GCP_STORAGE_CLASS ?? "";
+const location = Bun.env.GCP_STORAGE_LOCATION ?? "";
 
 async function createBucketIfNotExists() {
 	logger.info(`Checking if bucket ${bucketName} exists`);

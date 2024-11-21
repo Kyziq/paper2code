@@ -4,10 +4,10 @@
 	"version": "0.0.1",
 	"type": "module",
 	"scripts": {
-		"dev": "bun vite --host",
-		"build": "bun run tsc -b && bun run vite build",
-		"preview": "bun run vite preview",
-		"typecheck": "bun run tsc --noEmit"
+		"dev": "bunx --bun vite --host",
+		"build": "bunx --bun tsc && bunx --bunx vite build",
+		"preview": "bunx --bun run vite preview",
+		"typecheck": "bunx --bun tsc --noEmit"
 	},
 	"dependencies": {
 		"@radix-ui/react-label": "^2.1.0",
@@ -30,6 +30,7 @@
 		"@types/react-dom": "^18.3.1",
 		"@vitejs/plugin-react-swc": "^3.7.1",
 		"autoprefixer": "^10.4.20",
+		"dotenv": "^16.4.5",
 		"postcss": "^8.4.49",
 		"tailwindcss": "^3.4.15",
 		"vite": "^5.4.11"
