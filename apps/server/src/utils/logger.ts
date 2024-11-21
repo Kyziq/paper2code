@@ -1,6 +1,7 @@
 import path from "node:path";
 import type { protos } from "@google-cloud/vision";
 import pc from "picocolors";
+import { formatTimestamp } from "~shared/utils/formatting";
 
 type LogLevel =
 	| "info"
@@ -68,22 +69,7 @@ class Logger {
 	}
 
 	private getTimestamp() {
-		const now = new Date();
-		const date = [
-			now.getDate().toString().padStart(2, "0"),
-			(now.getMonth() + 1).toString().padStart(2, "0"),
-			now.getFullYear(),
-		].join("/");
-		const hours = now.getHours();
-		const ampm = hours >= 12 ? "PM" : "AM";
-		const hour12 = hours % 12 || 12;
-		const time = [
-			hour12,
-			now.getMinutes().toString().padStart(2, "0"),
-			now.getSeconds().toString().padStart(2, "0"),
-		].join(":");
-		const ms = now.getMilliseconds().toString().padStart(3, "0");
-		return pc.dim(`[${date} | ${time}.${ms} ${ampm}]`);
+		return pc.dim(formatTimestamp(new Date(), { showMilliseconds: true }));
 	}
 
 	private formatMessage(message: unknown): string {
