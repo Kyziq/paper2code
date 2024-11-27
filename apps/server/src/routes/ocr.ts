@@ -1,7 +1,7 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { Elysia, t } from "elysia";
-import { performOCR } from "~/services/ocrService";
+import { processOCR } from "~/services/ocr";
 import {
 	ALLOWED_FILE_TYPES,
 	FILE_SIZE_LIMITS,
@@ -45,7 +45,7 @@ export const ocrRoute = new Elysia().post(
 
 		try {
 			logger.info(`Processing ${file.type} file: ${file.name}`);
-			const text = await performOCR(file);
+			const text = await processOCR(file);
 			logger.ocr(`OCR completed for ${file.name}`);
 
 			const pythonFileName = `ocr_result_${Date.now()}.py`;
