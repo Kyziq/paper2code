@@ -1,5 +1,5 @@
 import { Storage } from "@google-cloud/storage";
-import vision from "@google-cloud/vision";
+import vision, { protos } from "@google-cloud/vision";
 import { logger } from "~/utils/logger";
 
 const client = new vision.ImageAnnotatorClient({
@@ -63,9 +63,133 @@ export const handleImage = async (fileName: string): Promise<string> => {
 	}
 };
 
-export const handlePDF = async (filePath: string): Promise<string> => {
-	// TODO: Implement PDF handling logic
-	throw new Error("PDF handling not implemented yet");
+export const handlePDF = async (fileName: string): Promise<string> => {
+	logger.ocr(`Starting OCR process for PDF: ${fileName}`);
+
+	try {
+		const gcsSourceUri = `gs://${bucketName}/${fileName}`;
+		const outputPrefix = `output-${Date.now()}`;
+		const gcsDestinationUri = `gs://${bucketName}/${outputPrefix}/`;
+
+		const inputConfig: protos.google.cloud.vision.v1.IInputConfig = {
+			mimeType: "application/pdf",
+			gcsSource: {
+				uri: gcsSourceUri,
+			},
+		};
+
+		const outputConfig: protos.google.cloud.vision.v1.IOutputConfig = {
+			gcsDestination: {
+				uri: gcsDestinationUri,
+			},
+		};
+
+		const features: protos.google.cloud.vision.v1.IFeature[] = [
+			{
+				type: protos.google.cloud.vision.v1.Feature.Type
+					.DOCUMENT_TEXT_DETECTION,
+			},
+		];
+
+		const request: protos.google.cloud.vision.v1.IAsyncBatchAnnotateFilesRequest =
+			{
+				requests: [
+					{
+						inputConfig,
+						features,
+						outputConfig,
+					},
+				],
+			};
+
+		// Start the operation
+		logger.info("Starting PDF processing");
+		const [operation] = await client.asyncBatchAnnotateFiles(request);
+
+		// Wait for the operation to complete
+		logger.info("Waiting for PDF processing to complete...");
+		const [filesResponse] = await operation.promise();
+
+		if (!filesResponse?.responses?.[0]?.outputConfig?.gcsDestination?.uri) {
+			throw new Error("Invalid response from Vision API");
+		}
+
+		// Get the JSON results from GCS
+		const jsonUri = filesResponse.responses[0].outputConfig.gcsDestination.uri;
+		logger.info(`PDF processing complete. Results saved to: ${jsonUri}`);
+
+		// Wait briefly for the file to be available
+		// await new Promise((resolve) => setTimeout(resolve, 2000));
+
+		// Download and parse the results
+		const resultBucket = storage.bucket(bucketName);
+		const jsonOutputPath = `${outputPrefix}/output-1-to-1.json`;
+		const resultFile = resultBucket.file(jsonOutputPath);
+
+		// Check if file exists
+		const [exists] = await resultFile.exists();
+		if (!exists) {
+			logger.error(`Output file not found: ${jsonOutputPath}`);
+			// Try alternative file name
+			const alternativeJsonPath = `${outputPrefix}/output-0-to-0.json`;
+			const alternativeFile = resultBucket.file(alternativeJsonPath);
+			const [alternativeExists] = await alternativeFile.exists();
+			if (!alternativeExists) {
+				throw new Error(
+					`Neither ${jsonOutputPath} nor ${alternativeJsonPath} were found`,
+				);
+			}
+			logger.info(`Found alternative output file: ${alternativeJsonPath}`);
+			const [content] = await alternativeFile.download();
+			const result = JSON.parse(content.toString());
+			const extractedText = result?.responses?.[0]?.fullTextAnnotation?.text;
+
+			logger.logOCR(extractedText, "pdf");
+
+			if (!extractedText) {
+				throw new Error("No text detected in the PDF");
+			}
+
+			// Clean up the output files
+			try {
+				const [files] = await resultBucket.getFiles({ prefix: outputPrefix });
+				await Promise.all(files.map((file) => file.delete()));
+				logger.delete(`Deleted output files with prefix: ${outputPrefix}`);
+			} catch (cleanupError) {
+				logger.error(`Failed to clean up output files: ${cleanupError}`);
+			}
+
+			logger.ocr(`OCR completed for PDF: ${fileName}`);
+			logger.ocr(`Detected text: ${extractedText.trim()}`);
+
+			return extractedText.trim();
+		}
+
+		// If original file exists, process it
+		const [content] = await resultFile.download();
+		const result = JSON.parse(content.toString());
+		const extractedText = result?.responses?.[0]?.fullTextAnnotation?.text;
+
+		if (!extractedText) {
+			throw new Error("No text detected in the PDF");
+		}
+
+		// Clean up the output files
+		try {
+			const [files] = await resultBucket.getFiles({ prefix: outputPrefix });
+			await Promise.all(files.map((file) => file.delete()));
+			logger.delete(`Deleted output files with prefix: ${outputPrefix}`);
+		} catch (cleanupError) {
+			logger.error(`Failed to clean up output files: ${cleanupError}`);
+		}
+
+		logger.ocr(`OCR completed for PDF: ${fileName}`);
+		logger.ocr(`Detected text: ${extractedText.trim()}`);
+
+		return extractedText.trim();
+	} catch (error) {
+		throw new Error(`Failed to perform OCR on PDF ${fileName}: ${error}`);
+	}
 };
 
 export const performOCR = async (file: File): Promise<string> => {
