@@ -4,10 +4,10 @@
 	"version": "0.0.1",
 	"type": "module",
 	"scripts": {
-		"dev": "bunx --bun vite --host",
-		"build": "bunx --bun tsc && bunx --bunx vite build",
-		"preview": "bunx --bun run vite preview",
-		"typecheck": "bunx --bun tsc --noEmit"
+		"dev": "bun vite --host",
+		"build": "bun tsc && bun vite build",
+		"preview": "bun run vite preview",
+		"typecheck": "bun tsc --noEmit"
 	},
 	"dependencies": {
 		"@radix-ui/react-label": "^2.1.0",

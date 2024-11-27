@@ -9,9 +9,9 @@
 	],
 	"scripts": {
 		"dev": "bun --bun concurrently -n \"WEB,SERVER\" -c \"blue,green\" \"cd apps/web && bun run dev\" \"cd apps/server && bun run dev\"",
-		"build": "bun run build:web && bun run build:server",
-		"check": "biome check .",
-		"check:fix": "biome check . --write"
+		"build": "bun --bun run build:web && bun --bun run build:server",
+		"check": "bunx biome check .",
+		"check:fix": "bunx biome check . --write"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "1.9.4",

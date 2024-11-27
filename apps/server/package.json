@@ -3,7 +3,7 @@
 	"version": "1.0.0",
 	"scripts": {
 		"predev": "docker compose up -d",
-		"dev": "bun run --watch src/index.ts",
+		"dev": "bun run src/index.ts",
 		"postdev": "docker compose down -v --remove-orphans"
 	},
 	"dependencies": {
