@@ -2,7 +2,7 @@ import { protos } from "@google-cloud/vision";
 import { gcpConfig, storageClient, visionClient } from "~/config/gcp.config";
 import { logger } from "~/utils/logger";
 
-async function cleanupOutputFiles(outputPrefix: string): Promise<void> {
+async function deleteGCSOutputFiles(outputPrefix: string): Promise<void> {
 	try {
 		const bucket = storageClient.bucket(gcpConfig.bucket.name);
 		const [files] = await bucket.getFiles({ prefix: outputPrefix });
@@ -12,32 +12,39 @@ async function cleanupOutputFiles(outputPrefix: string): Promise<void> {
 		logger.error(`Failed to clean up output files: ${error}`);
 	}
 }
-
-async function extractTextFromOutput(outputPrefix: string): Promise<string> {
+async function downloadAndParseOutput(
+	outputPrefix: string,
+): Promise<protos.google.cloud.vision.v1.IAnnotateFileResponse | null> {
 	const bucket = storageClient.bucket(gcpConfig.bucket.name);
 	const possiblePaths = [
-		`${outputPrefix}/output-1-to-1.json`, // For multi-page PDFs
 		`${outputPrefix}/output-0-to-0.json`, // For single-page PDFs
+		`${outputPrefix}/output-1-to-1.json`, // For multi-page PDFs
 	];
 
 	for (const path of possiblePaths) {
 		const file = bucket.file(path);
 		const [exists] = await file.exists();
-
 		if (exists) {
 			logger.info(`Found output file: ${path}`);
 			const [content] = await file.download();
-			const result = JSON.parse(content.toString());
-			const extractedText = result?.responses?.[0]?.fullTextAnnotation?.text;
-
-			if (extractedText) {
-				logger.logOCR(extractedText, "pdf");
-				return extractedText.trim();
-			}
+			return JSON.parse(content.toString());
 		}
 	}
+	return null;
+}
 
-	throw new Error("No text detected in the PDF");
+async function extractTextFromOutput(outputPrefix: string): Promise<string> {
+	const result = await downloadAndParseOutput(outputPrefix);
+	if (!result) {
+		throw new Error("No output files found");
+	}
+
+	const extractedText = result?.responses?.[0]?.fullTextAnnotation?.text;
+	if (!extractedText) {
+		throw new Error("No text detected in the PDF");
+	}
+
+	return extractedText.trim();
 }
 
 export async function processPDF(fileName: string): Promise<string> {
@@ -74,12 +81,10 @@ export async function processPDF(fileName: string): Promise<string> {
 			};
 
 		// Start the operation
-		logger.info("Starting PDF processing");
 		const [operation] = await visionClient.asyncBatchAnnotateFiles(request);
 
 		// Wait for operation to complete
 		const [filesResponse] = await operation.promise();
-		logger.info("PDF processing complete");
 
 		if (!filesResponse?.responses?.[0]?.outputConfig?.gcsDestination?.uri) {
 			throw new Error("Invalid response from Vision API");
@@ -87,19 +92,24 @@ export async function processPDF(fileName: string): Promise<string> {
 
 		// Get the JSON results from GCS
 		const jsonUri = filesResponse.responses[0].outputConfig.gcsDestination.uri;
-		logger.info(`PDF processing complete. Results saved to: ${jsonUri}`);
+		logger.ocr(`PDF processing complete. JSON result saved to: ${jsonUri}`);
 
 		// Extract text from the output files
 		const extractedText = await extractTextFromOutput(outputPrefix);
-
 		logger.ocr(`OCR completed for PDF: ${fileName}`);
-		logger.ocr(`Detected text: ${extractedText}`);
+		logger.ocr(`Detected text: \n${extractedText}`);
+
+		// Log detailed OCR results after showing extracted text
+		const result = await downloadAndParseOutput(outputPrefix);
+		if (result) {
+			logger.detailedOCR(result, "pdf");
+		}
 
 		return extractedText;
 	} catch (error) {
 		throw new Error(`Failed to perform OCR on PDF ${fileName}: ${error}`);
 	} finally {
 		// Always cleanup output files
-		await cleanupOutputFiles(outputPrefix);
+		await deleteGCSOutputFiles(outputPrefix);
 	}
 }

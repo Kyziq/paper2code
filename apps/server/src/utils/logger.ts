@@ -14,7 +14,9 @@ type LogLevel =
 	| "docker"
 	| "delete";
 
-type FullTextAnnotation = protos.google.cloud.vision.v1.ITextAnnotation;
+type ITextAnnotation = protos.google.cloud.vision.v1.ITextAnnotation;
+type IAnnotateFileResponse =
+	protos.google.cloud.vision.v1.IAnnotateFileResponse;
 
 const logConfig = {
 	styles: {
@@ -22,7 +24,7 @@ const logConfig = {
 		warn: { icon: "⚠️", color: pc.yellow },
 		error: { icon: "❌", color: pc.red },
 		success: { icon: "✅", color: pc.green },
-		debug: { icon: "🐛", color: pc.magenta },
+		debug: { icon: "🐛", color: pc.gray },
 		api: { icon: "🔗", color: pc.blue },
 		ocr: { icon: "🔍", color: pc.magenta },
 		docker: { icon: "🐳", color: pc.cyan },
@@ -111,13 +113,31 @@ class Logger {
 	docker = (message: unknown) => this.log("docker", message);
 	delete = (message: unknown) => this.log("delete", message);
 
-	logOCR(data: FullTextAnnotation, type: "image" | "pdf") {
+	detailedOCR(
+		data: ITextAnnotation | IAnnotateFileResponse,
+		sourceType: "image" | "pdf",
+	) {
 		if (logConfig.isProd) return;
 		console.log("");
-		this.info(pc.cyan(`----- OCR Results (${type.toUpperCase()}) -----`));
+		this.info(
+			pc.cyan(`----- OCR Result for ${sourceType.toUpperCase()} -----`),
+		);
 
-		data.pages?.forEach((page, pageIdx) => {
-			this.info(pc.cyan(`----- Page ${pageIdx + 1} -----`));
+		const pages =
+			sourceType === "image"
+				? (data as ITextAnnotation).pages
+				: (data as IAnnotateFileResponse).responses?.[0]?.fullTextAnnotation
+						?.pages;
+
+		if (!pages) {
+			this.warn("No pages found in OCR result");
+			return;
+		}
+
+		pages.forEach((page, pageIdx) => {
+			// if (pageIdx > 0) {
+			// 		console.log(pc.cyan(`\n----- Page ${pageIdx + 1} -----`));
+			// }
 
 			page.blocks?.forEach((block, blockIdx) => {
 				console.log(
@@ -150,9 +170,12 @@ class Logger {
 							const symbolConfidence = this.getConfidenceColor(
 								symbol.confidence,
 							);
+							const breakInfo = symbol.property?.detectedBreak?.type
+								? ` [${symbol.property.detectedBreak.type}]`
+								: "";
 							console.log(
 								pc.gray(
-									`      Symbol ${symbolIndex + 1}: ${pc.white(symbol.text)} - Confidence: ${symbolConfidence}`,
+									`      Symbol ${symbolIndex + 1}: ${pc.white(symbol.text)} - Confidence: ${symbolConfidence}${breakInfo}`,
 								),
 							);
 						});

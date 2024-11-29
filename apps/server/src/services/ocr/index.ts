@@ -1,8 +1,8 @@
 import { logger } from "~/utils/logger";
 import {
 	createBucketIfNotExists,
-	deleteFile,
-	uploadFile,
+	deleteGCSFile,
+	uploadGCSFile,
 } from "~/utils/storage";
 import { processImage } from "./handlers/image";
 import { processPDF } from "./handlers/pdf";
@@ -12,7 +12,7 @@ export async function processOCR(file: File): Promise<string> {
 
 	try {
 		await createBucketIfNotExists();
-		await uploadFile(file);
+		await uploadGCSFile(file);
 
 		const result =
 			file.type === "application/pdf"
@@ -22,6 +22,6 @@ export async function processOCR(file: File): Promise<string> {
 		logger.success(`OCR process completed successfully for ${file.name}`);
 		return result;
 	} finally {
-		await deleteFile(file.name);
+		await deleteGCSFile(file.name);
 	}
 }

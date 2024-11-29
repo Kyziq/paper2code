@@ -23,7 +23,7 @@ export async function createBucketIfNotExists(): Promise<void> {
 	}
 }
 
-export async function uploadFile(file: File): Promise<void> {
+export async function uploadGCSFile(file: File): Promise<void> {
 	const bucket = storageClient.bucket(gcpConfig.bucket.name);
 	const blob = bucket.file(file.name);
 	const buffer = Buffer.from(await file.arrayBuffer());
@@ -32,7 +32,7 @@ export async function uploadFile(file: File): Promise<void> {
 	logger.success(`File uploaded to bucket: ${file.name}`);
 }
 
-export async function deleteFile(fileName: string): Promise<void> {
+export async function deleteGCSFile(fileName: string): Promise<void> {
 	try {
 		const bucket = storageClient.bucket(gcpConfig.bucket.name);
 		await bucket.file(fileName).delete();
