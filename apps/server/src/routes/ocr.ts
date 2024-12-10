@@ -1,12 +1,6 @@
-import { promises as fs } from "node:fs";
-import path from "node:path";
 import { Elysia, t } from "elysia";
 import { processOCR } from "~/services/ocr";
-import {
-	ALLOWED_FILE_TYPES,
-	FILE_SIZE_LIMITS,
-	TEMP_DIR,
-} from "~/utils/constants";
+import { ALLOWED_FILE_TYPES, FILE_SIZE_LIMITS } from "~/utils/constants";
 import {
 	BadRequestError,
 	PayloadTooLargeError,
@@ -45,18 +39,13 @@ export const ocrRoute = new Elysia().post(
 
 		try {
 			logger.info(`Processing ${file.type} file: ${file.name}`);
-			const text = await processOCR(file);
+			const code = await processOCR(file);
 			logger.ocr(`OCR completed for ${file.name}`);
-
-			const pythonFileName = `ocr_result_${Date.now()}.py`;
-			const pythonFilePath = path.resolve(TEMP_DIR, pythonFileName);
-			await fs.writeFile(pythonFilePath, text);
-			logger.success(`Python file created: ${pythonFilePath}`);
 
 			return {
 				message: "Text extraction successful",
 				data: {
-					uploadedFilePath: pythonFilePath,
+					code,
 				},
 			};
 		} catch (error) {
@@ -76,7 +65,7 @@ export const ocrRoute = new Elysia().post(
 			message: t.String(),
 			data: t.Optional(
 				t.Object({
-					uploadedFilePath: t.String(),
+					code: t.String(),
 				}),
 			),
 		}),

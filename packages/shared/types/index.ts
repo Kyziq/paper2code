@@ -9,7 +9,7 @@ export interface ApiResponse<T = unknown> {
 }
 
 export interface FileUploadResponseData {
-	uploadedFilePath: string;
+	code: string;
 }
 
 export type FileUploadResponse = ApiResponse<FileUploadResponseData>;

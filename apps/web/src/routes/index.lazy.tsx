@@ -45,25 +45,32 @@ function Index() {
 		onSuccess: (result: FileUploadResponse) => {
 			setConsoleMessage(result.message ?? "");
 			toast.success("File uploaded successfully. Proceeding to execution...");
-			handleExecute(result.data?.uploadedFilePath || ""); // Automatically trigger execution after upload
+
+			// Check for code in the response data
+			if (result.data?.code) {
+				handleExecute(result.data.code);
+			} else {
+				toast.error("No code was extracted from the file");
+			}
+
 			queryClient.invalidateQueries({ queryKey: ["fileStatus"] });
 		},
 		onError: (error: Error) => {
-			setConsoleMessage(error.message); // For console
+			setConsoleMessage(error.message);
 			toast.error("Error uploading file. Check the console for details.");
 		},
 	});
 
 	const executeMutation = useMutation({
-		mutationFn: (filePath: string) => executeFile(filePath),
+		mutationFn: (code: string) => executeFile(code),
 		onSuccess: (response: FileExecutionResponse) => {
 			setConsoleMessage(response.data?.output ?? "");
-			toast.success("File executed successfully");
+			toast.success("Code executed successfully");
 			queryClient.invalidateQueries({ queryKey: ["executionResult"] });
 		},
 		onError: (error: Error) => {
 			setConsoleMessage(error.message);
-			toast.error("Error executing file. Check the console for details.");
+			toast.error("Error executing code. Check the console for details.");
 		},
 	});
 

@@ -1,110 +1,91 @@
 import { exec } from "node:child_process";
-import fs, { promises as fsPromises } from "node:fs";
-import path from "node:path";
 import util from "node:util";
-import { TEMP_DIR } from "~/utils/constants";
 import { logger } from "~/utils/logger";
 
 const execPromise = util.promisify(exec);
 
-const fixPythonSpacing = (filePath: string) => {
-	logger.debug(`Fixing Python spacing for file: ${filePath}`);
-	let content = fs.readFileSync(filePath, "utf-8");
+/**
+ * Normalizes Python code spacing and indentation.
+ * @param content - The Python code to format
+ * @returns Formatted Python code with consistent spacing and indentation
+ */
+const fixPythonSpacing = (inputContent: string): string => {
+	logger.debug("Fixing Python spacing");
 
-	// Add shebang if not present
-	if (!content.startsWith("#!/usr/bin/env python")) {
-		content = `#!/usr/bin/env python\n${content}`;
-	}
+	// Remove shebang if present and any leading empty lines
+	// This ensures the code starts with actual Python statements
+	let formattedContent = inputContent.replace(/^(#!.*\n|\s*)*/, "");
 
-	// Fix spaces before parentheses
-	content = content.replace(/(\w+)\s+\(/g, "$1(");
+	// Replace any spaces between function name and opening parenthesis
+	// Example: print  ("Hello") -> print("Hello")
+	formattedContent = formattedContent.replace(/(\w+)\s+\(/g, "$1(");
 
-	// Correct indentation
-	const lines = content.split("\n");
-	let indentLevel = 0;
-	const indentSize = 4;
+	// Process each line to handle indentation
+	const lines = formattedContent.split("\n");
+	let indentLevel = 0; // Tracks current indentation level
+	const indentSize = 4; // Standard Python indentation is 4 spaces
 
 	for (let i = 0; i < lines.length; i++) {
 		const line = lines[i].trim();
 
-		// Decrease indent for lines starting with 'else:', 'elif:', 'except:', etc.
+		// Decrease indent for else/elif/except/finally blocks
+		// as they should align with their corresponding if/try
 		if (/^(else|elif|except|finally):/.test(line)) {
 			indentLevel = Math.max(0, indentLevel - 1);
 		}
 
-		// Set the correct indentation
+		// Apply the current indentation level
 		lines[i] = " ".repeat(indentLevel * indentSize) + line;
 
-		// Increase indent for lines ending with ':' (start of a new block)
+		// Increase indent after lines ending with colon
+		// These indicate the start of a new block (if/for/while/etc)
 		if (line.endsWith(":")) {
 			indentLevel++;
 		}
 
-		// Decrease indent for 'return', 'break', 'continue', etc.
+		// Decrease indent after return/break/continue/pass
+		// as these often end a block
 		if (/^(return|break|continue|pass)/.test(line)) {
 			indentLevel = Math.max(0, indentLevel - 1);
 		}
 	}
 
-	const fixedContent = lines.join("\n");
-	fs.writeFileSync(filePath, fixedContent);
-	logger.debug(`Python spacing fixed for file: ${filePath}`);
+	return lines.join("\n");
 };
 
-const checkPythonSyntax = async (filePath: string): Promise<void> => {
-	logger.debug(`Checking Python syntax for file: ${filePath}`);
+/**
+ * Executes Python code inside a Docker container with proper isolation.
+ * Uses base64 encoding to safely transmit the code into the container.
+ *
+ * @param content - The Python code to execute
+ * @returns The stdout output from the code execution
+ * @throws Error if execution fails
+ */
+export const runDockerContainer = async (content: string): Promise<string> => {
+	logger.docker("Preparing to run code in Docker container");
+
 	try {
-		await execPromise(`python -m py_compile ${filePath}`, { timeout: 10000 });
-		logger.debug(`Python syntax check passed for file: ${filePath}`);
+		// Format the Python code
+		const formattedContent = fixPythonSpacing(content);
+
+		// Convert the code to base64 to safely pass it into the container
+		// This prevents issues with quotes, newlines, and special characters
+		const encodedContent = Buffer.from(formattedContent).toString("base64");
+
+		// Construct the docker command that will:
+		// 1. Execute in the python-runner container (-T disables pseudo-TTY)
+		// 2. Run Python with the encoded content
+		// 3. Decode the base64 content and execute it
+		const command = `docker compose exec -T python-runner python -c "import base64; exec(base64.b64decode('${encodedContent}').decode())"`;
+
+		logger.debug("Executing code in container");
+		const { stdout } = await execPromise(command, { timeout: 60000 });
+		logger.success("Script execution completed successfully");
+
+		return stdout.trim();
 	} catch (error) {
-		logger.error(`Python syntax check failed: ${(error as Error).message}`);
-		throw new Error(`Syntax Error: ${(error as Error).message}`);
-	}
-};
-
-export const runDockerContainer = async (fileName: string): Promise<string> => {
-	const filePath = path.join(TEMP_DIR, fileName);
-	logger.docker(`Preparing to run Docker container for file: ${fileName}`);
-
-	try {
-		// Verify the file exists
-		if (!fs.existsSync(filePath)) {
-			throw new Error(`File not found at ${filePath}`);
-		}
-		logger.debug(`File exists at ${filePath}`);
-
-		// Apply Python code formatting and syntax check
-		fixPythonSpacing(filePath);
-		await checkPythonSyntax(filePath);
-
-		// Execute the Python script in the running container
-		const command = `docker compose exec -T python-runner python /code/${fileName}`;
-		const timeout = 60 * 1000; // 60 seconds
-
-		logger.debug(`Running command: ${command}`);
-		const { stdout: executeResult } = await execPromise(command, { timeout });
-		logger.success(`Script execution completed successfully for ${fileName}`);
-
-		return executeResult.trim();
-	} finally {
-		try {
-			// Delete the temporary local Python file
-			await fsPromises.unlink(filePath);
-			logger.delete(`Python file deleted: ${filePath}`);
-
-			// Remove the __pycache__ directory if it exists
-			const pycacheDir = path.join(path.dirname(filePath), "__pycache__");
-			if (
-				await fsPromises
-					.access(pycacheDir)
-					.then(() => true)
-					.catch(() => false)
-			) {
-				await fsPromises.rm(pycacheDir, { recursive: true, force: true });
-				logger.delete(`__pycache__ directory removed: ${pycacheDir}`);
-			}
-		} catch (cleanupError) {
-			logger.error(`Cleanup error: ${cleanupError}`);
-		}
+		const errorMessage = error instanceof Error ? error.message : String(error);
+		logger.error(`Execution error: ${errorMessage}`);
+		throw new Error(`Execution failed: ${errorMessage}`);
 	}
 };

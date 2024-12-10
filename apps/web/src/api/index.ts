@@ -29,12 +29,12 @@ export const uploadFile = async (
 };
 
 export const executeFile = async (
-	filePath: string,
+	code: string,
 ): Promise<FileExecutionResponse> => {
 	try {
 		const response = await kyInstance
 			.post("execute", {
-				json: { filePath },
+				json: { code },
 			})
 			.json<FileExecutionResponse>();
 		return response;
@@ -42,6 +42,6 @@ export const executeFile = async (
 		if (error instanceof Error) {
 			throw new Error(error.message);
 		}
-		throw new Error("An unknown error occurred during file execution");
+		throw new Error("An unknown error occurred during code execution");
 	}
 };

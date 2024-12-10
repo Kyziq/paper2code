@@ -1,4 +1,3 @@
-import path from "node:path";
 import { Elysia, t } from "elysia";
 import { runDockerContainer } from "~/services/dockerService";
 import { BadRequestError } from "~/utils/errors";
@@ -8,35 +7,34 @@ import type { FileExecutionResponse } from "~shared/types";
 export const executeRoute = new Elysia().post(
 	"/api/execute",
 	async ({ body }): Promise<FileExecutionResponse> => {
-		const { filePath } = body;
+		const { code } = body;
 
-		if (!filePath) {
-			logger.error("No file path provided for execution");
-			throw new BadRequestError("No file path provided");
+		if (!code) {
+			logger.error("No code provided for execution");
+			throw new BadRequestError("No code provided");
 		}
 
-		const fileName = path.basename(filePath);
-		logger.docker(`Preparing to execute file: ${fileName}`);
+		logger.docker("Preparing to execute code");
 
 		try {
-			const output = await runDockerContainer(fileName);
-			logger.docker(`Execution completed for ${fileName}`);
+			const output = await runDockerContainer(code);
+			logger.docker("Execution completed");
 			logger.debug(`Execution output:\n${output}`);
 
 			return {
-				message: "File execution successful",
+				message: "Code execution successful",
 				data: { output },
 			};
 		} catch (error) {
 			logger.error(`Execution failed: ${(error as Error).message}`);
 			throw new Error(
-				`Error during file execution: ${(error as Error).message}`,
+				`Error during code execution: ${(error as Error).message}`,
 			);
 		}
 	},
 	{
 		body: t.Object({
-			filePath: t.String(),
+			code: t.String(),
 		}),
 		type: "json",
 		response: t.Object({
