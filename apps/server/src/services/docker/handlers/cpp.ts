@@ -3,14 +3,6 @@ import { DOCKER_CONFIG } from "../config";
 export const cppHandler = {
 	getServiceName: () => "cpp-runner",
 
-	getTestCode: () => `#include <iostream>
-using namespace std;
-
-int main() {
-    cout << "Hello World from C++" << endl;
-    return 0;
-}`,
-
 	buildCommand: (encodedContent: string, executionId: string) => {
 		const uniqueDir = `${DOCKER_CONFIG.EXECUTION.TEMP_FILE_PREFIX}_${executionId}`;
 		const sourceFile = "program.cpp";

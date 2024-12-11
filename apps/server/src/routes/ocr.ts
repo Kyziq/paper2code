@@ -9,6 +9,7 @@ import { logger } from "~/utils/logger";
 import {
 	MAX_FILE_SIZES,
 	SUPPORTED_FILE_TYPES,
+	type SupportedLanguage,
 	type SupportedMimeType,
 } from "~shared/constants";
 import type { FileUploadResponse } from "~shared/types";
@@ -18,7 +19,7 @@ export const ocrRoute = new Elysia().post(
 	async ({ body, set }): Promise<FileUploadResponse> => {
 		// Extract file and language from request body
 		const file = body.file[0];
-		const language = body.language;
+		const language = body.language as SupportedLanguage;
 
 		// Validate file presence
 		if (!file) {
@@ -48,7 +49,7 @@ export const ocrRoute = new Elysia().post(
 		// Process the file through OCR
 		try {
 			logger.info(`Processing ${file.type} file: ${file.name}`);
-			const code = await processOCR(file);
+			const code = await processOCR(file, language);
 			logger.ocr(`OCR completed for ${file.name}`);
 
 			return {

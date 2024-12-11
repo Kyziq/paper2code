@@ -13,5 +13,4 @@ export const DOCKER_CONFIG = {
 		TIMEOUT: 60000,
 		TEMP_FILE_PREFIX: "/tmp/temp",
 	},
-	USE_TEST_CODE: true,
 } as const;

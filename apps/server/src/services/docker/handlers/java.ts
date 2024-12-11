@@ -9,12 +9,6 @@ const extractJavaClassName = (code: string): string => {
 export const javaHandler = {
 	getServiceName: () => "java-runner",
 
-	getTestCode: () => `public class Main {
-    public static void main(String[] args) {
-        System.out.println("Hello World from Java");
-    }
-}`,
-
 	buildCommand: (encodedContent: string, executionId: string) => {
 		const uniqueDir = `${DOCKER_CONFIG.EXECUTION.TEMP_FILE_PREFIX}_${executionId}`;
 		const code = Buffer.from(encodedContent, "base64").toString();

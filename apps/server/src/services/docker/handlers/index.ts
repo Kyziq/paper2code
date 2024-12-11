@@ -1,3 +1,4 @@
+import type { SupportedLanguage } from "~shared/constants";
 import { cppHandler } from "./cpp";
 import { javaHandler } from "./java";
 
@@ -5,8 +6,6 @@ const handlers = {
 	cpp: cppHandler,
 	java: javaHandler,
 } as const;
-
-export type SupportedLanguage = keyof typeof handlers;
 
 export const getLanguageHandler = (language: SupportedLanguage) => {
 	const handler = handlers[language];

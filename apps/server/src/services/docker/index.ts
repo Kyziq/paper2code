@@ -1,8 +1,9 @@
 import { exec } from "node:child_process";
 import util from "node:util";
 import { logger } from "~/utils/logger";
+import type { SupportedLanguage } from "~shared/constants";
 import { DOCKER_CONFIG } from "./config";
-import { type SupportedLanguage, getLanguageHandler } from "./handlers";
+import { getLanguageHandler } from "./handlers";
 
 const execPromise = util.promisify(exec);
 
@@ -21,12 +22,7 @@ export const runContainer = async (
 	const handler = getLanguageHandler(language);
 
 	try {
-		// Get code to execute
-		const codeToExecute = DOCKER_CONFIG.USE_TEST_CODE
-			? handler.getTestCode()
-			: content;
-
-		const encodedContent = Buffer.from(codeToExecute).toString("base64");
+		const encodedContent = Buffer.from(content).toString("base64");
 		logger.docker(`Code prepared for execution [ID: ${executionId}]`);
 
 		// Build and execute command
