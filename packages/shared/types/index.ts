@@ -1,11 +1,18 @@
-export interface FileUploadParams {
-	file: File;
-	language: string;
-}
-
+// Base Response Types
 export interface ApiResponse<T = unknown> {
 	message: string;
 	data?: T;
+}
+
+export interface ErrorResponse {
+	message: string;
+	statusCode: number;
+}
+
+// File Upload Related
+export interface FileUploadParams {
+	file: File;
+	language: string;
 }
 
 export interface FileUploadResponseData {
@@ -15,6 +22,7 @@ export interface FileUploadResponseData {
 
 export type FileUploadResponse = ApiResponse<FileUploadResponseData>;
 
+// File Execution Related
 export interface FileExecutionParams {
 	code: string;
 	language: string;
@@ -25,8 +33,3 @@ export interface FileExecutionResponseData {
 }
 
 export type FileExecutionResponse = ApiResponse<FileExecutionResponseData>;
-
-export interface ErrorResponse {
-	message: string;
-	statusCode: number;
-}
