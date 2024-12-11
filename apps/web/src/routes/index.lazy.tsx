@@ -5,18 +5,6 @@ import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
 
 import { executeFile, uploadFile } from "~/api";
-import { useStore } from "~/stores/useStore";
-import {
-	ACCEPTED_FILE_EXTENSIONS,
-	SUPPORTED_LANGUAGES,
-} from "~shared/constants";
-import type {
-	FileExecutionParams,
-	FileExecutionResponse,
-	FileUploadParams,
-	FileUploadResponse,
-} from "~shared/types";
-
 import { Console } from "~/components/console";
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
@@ -28,6 +16,17 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "~/components/ui/select";
+import { useStore } from "~/stores/useStore";
+import {
+	ACCEPTED_FILE_EXTENSIONS,
+	SUPPORTED_LANGUAGES,
+} from "~shared/constants";
+import type {
+	FileExecutionParams,
+	FileExecutionResponse,
+	FileUploadParams,
+	FileUploadResponse,
+} from "~shared/types";
 
 export const Route = createLazyFileRoute("/")({
 	component: Index,
@@ -79,17 +78,15 @@ function Index() {
 		},
 	});
 
-	const handleUpload = () => {
-		if (!language) return toast.error("Please select a language.");
-		if (!file) return toast.error("Please upload a file.");
-		uploadMutation.mutate({ file, language });
-	};
-
-	const { getRootProps, getInputProps } = useDropzone({
+	const { getRootProps, getInputProps, isDragActive } = useDropzone({
 		onDrop: (acceptedFiles) => setFile(acceptedFiles[0]),
 		onDropRejected: () =>
 			toast.error(
-				`Invalid file type. Please upload a file with one of the following extensions: ${Object.values(ACCEPTED_FILE_EXTENSIONS).flat().join(", ")}`,
+				`Invalid file type. Please upload: ${Object.values(
+					ACCEPTED_FILE_EXTENSIONS,
+				)
+					.flat()
+					.join(", ")}`,
 			),
 		accept: ACCEPTED_FILE_EXTENSIONS,
 		multiple: false,
@@ -113,15 +110,13 @@ function Index() {
 						<h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent mb-2">
 							paper2code
 						</h1>
-						<p className="mb-8 text-slate-600 dark:text-slate-300">
-							Execute your handwritten code with ease.
-						</p>
+						<p className="mb-8">Execute your handwritten code with ease.</p>
 
 						<div className="space-y-6">
 							<div>
 								<Label
 									htmlFor="language-select"
-									className="text-sm font-medium text-slate-700 dark:text-slate-200"
+									className="text-sm font-medium "
 								>
 									Programming Language
 								</Label>
@@ -131,11 +126,11 @@ function Index() {
 								>
 									<SelectTrigger
 										id="language-select"
-										className="w-full mt-1 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700"
+										className="mt-1.5 w-full "
 									>
 										<SelectValue placeholder="Choose a language..." />
 									</SelectTrigger>
-									<SelectContent className="bg-white dark:bg-slate-900">
+									<SelectContent>
 										{SUPPORTED_LANGUAGES.map(({ value, label }) => (
 											<SelectItem key={value} value={value}>
 												{label}
@@ -145,37 +140,41 @@ function Index() {
 								</Select>
 							</div>
 
-							{/* File Upload Section */}
 							<div>
 								<Label className="text-sm font-medium text-slate-700 dark:text-slate-200">
 									Code File
 								</Label>
 								<div
-									className="mt-1 rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-700
-                    hover:border-blue-500 dark:hover:border-blue-400 transition-colors duration-200
-                    bg-white/50 dark:bg-slate-900/50"
+									{...getRootProps()}
+									className={`mt-1.5 rounded-lg border-2 border-dashed transition-colors duration-200
+                ${
+									isDragActive
+										? "border-blue-500 bg-blue-50 dark:border-blue-400 dark:bg-blue-900/10"
+										: "border-slate-200 dark:border-slate-700 hover:border-blue-500 dark:hover:border-blue-400"
+								}`}
 								>
-									<div
-										{...getRootProps()}
-										className="px-6 py-8 text-center cursor-pointer"
-									>
+									<div className="px-6 py-10 text-center cursor-pointer">
 										<input {...getInputProps()} />
 										{file ? (
-											<p className="text-slate-700 dark:text-slate-200">
-												{file.name}
-											</p>
+											<div className="text-slate-700 dark:text-slate-200">
+												<FileText className="mx-auto h-12 w-12 text-blue-500 dark:text-blue-400 mb-4" />
+												<p className="font-medium">{file.name}</p>
+												<p className="mt-1 text-sm text-slate-500">
+													Click or drag to replace
+												</p>
+											</div>
 										) : (
 											<div>
-												<FileText className="mx-auto h-12 w-12 text-blue-500 dark:text-blue-400 mb-3" />
-												<div className="flex justify-center text-sm">
-													<span className="font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500">
+												<FileText className="mx-auto h-12 w-12 text-blue-500 dark:text-blue-400" />
+												<div className="mt-4">
+													<span className="text-blue-600 dark:text-blue-400 font-medium">
 														Upload a file
 													</span>
-													<span className="pl-1 text-slate-600 dark:text-slate-400">
+													<span className="text-slate-600 dark:text-slate-400 ml-1">
 														or drag and drop
 													</span>
 												</div>
-												<p className="text-xs text-slate-500 dark:text-slate-400">
+												<p className="mt-1 text-sm text-slate-500">
 													PNG, JPG, JPEG, PDF up to 5MB
 												</p>
 											</div>
@@ -184,13 +183,17 @@ function Index() {
 								</div>
 							</div>
 
-							{/* Upload Button */}
 							<Button
-								className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700
-                  dark:from-blue-500 dark:to-indigo-500 dark:hover:from-blue-600 dark:hover:to-indigo-600
-                  text-white shadow-lg hover:shadow-xl transition-all duration-200"
-								onClick={handleUpload}
+								onClick={() => {
+									if (!language)
+										return toast.error("Please select a language.");
+									if (!file) return toast.error("Please upload a file.");
+									uploadMutation.mutate({ file, language });
+								}}
 								disabled={isProcessing}
+								className="w-full h-11 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500
+              dark:hover:bg-blue-600 text-white shadow-lg hover:shadow-xl
+              transition-all duration-200"
 							>
 								{isProcessing ? (
 									<LoadingSpinner className="h-5 w-5 border-white border-t-transparent" />
