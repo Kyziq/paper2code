@@ -1,12 +1,16 @@
 import { Elysia, t } from "elysia";
 import { processOCR } from "~/services/ocr";
-import { ALLOWED_FILE_TYPES, FILE_SIZE_LIMITS } from "~/utils/constants";
 import {
 	BadRequestError,
 	PayloadTooLargeError,
 	UnsupportedMediaTypeError,
 } from "~/utils/errors";
 import { logger } from "~/utils/logger";
+import {
+	MAX_FILE_SIZES,
+	SUPPORTED_FILE_TYPES,
+	type SupportedMimeType,
+} from "~shared/constants";
 import type { FileUploadResponse } from "~shared/types";
 
 export const ocrRoute = new Elysia().post(
@@ -21,14 +25,15 @@ export const ocrRoute = new Elysia().post(
 		}
 		logger.info(`Received file: ${file.name} (${file.type})`);
 
-		if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+		const supportedTypes = Object.values(SUPPORTED_FILE_TYPES);
+		if (!supportedTypes.includes(file.type as SupportedMimeType)) {
 			logger.warn(`Unsupported file type: ${file.type}`);
 			throw new UnsupportedMediaTypeError(`Unsupported file type ${file.type}`);
 		}
 
 		const sizeLimit = file.type.startsWith("image/")
-			? FILE_SIZE_LIMITS["image/*"]
-			: FILE_SIZE_LIMITS[file.type as keyof typeof FILE_SIZE_LIMITS];
+			? MAX_FILE_SIZES["image/*"]
+			: MAX_FILE_SIZES[file.type as keyof typeof MAX_FILE_SIZES];
 
 		if (file.size > sizeLimit) {
 			logger.warn(

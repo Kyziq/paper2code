@@ -6,7 +6,10 @@ import { toast } from "sonner";
 
 import { executeFile, uploadFile } from "~/api";
 import { useStore } from "~/stores/useStore";
-import { ALLOWED_FILE_TYPES, LANGUAGES } from "~/utils/constants.ts";
+import {
+	ACCEPTED_FILE_EXTENSIONS,
+	SUPPORTED_LANGUAGES,
+} from "~shared/constants";
 import type {
 	FileExecutionParams,
 	FileExecutionResponse,
@@ -84,7 +87,7 @@ function Index() {
 
 	const { getRootProps, getInputProps } = useDropzone({
 		onDrop: (acceptedFiles) => setFile(acceptedFiles[0]),
-		accept: ALLOWED_FILE_TYPES,
+		accept: ACCEPTED_FILE_EXTENSIONS,
 		multiple: false,
 	});
 
@@ -129,7 +132,7 @@ function Index() {
 										<SelectValue placeholder="Choose a language..." />
 									</SelectTrigger>
 									<SelectContent className="bg-white dark:bg-slate-900">
-										{LANGUAGES.map(({ value, label }) => (
+										{SUPPORTED_LANGUAGES.map(({ value, label }) => (
 											<SelectItem key={value} value={value}>
 												{label}
 											</SelectItem>
