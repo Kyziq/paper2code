@@ -30,11 +30,12 @@ export const uploadFile = async (
 
 export const executeFile = async (
 	code: string,
+	language: string,
 ): Promise<FileExecutionResponse> => {
 	try {
 		const response = await kyInstance
 			.post("execute", {
-				json: { code },
+				json: { code, language },
 			})
 			.json<FileExecutionResponse>();
 		return response;

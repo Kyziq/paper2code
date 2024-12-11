@@ -4,4 +4,4 @@ export const ALLOWED_FILE_TYPES = {
 	"application/pdf": [".pdf"],
 };
 // Programming languages supported by the application
-export const LANGUAGES = [{ value: "python", label: "Python" }]; // TODO: Add more languages
+export const LANGUAGES = [{ value: "cpp", label: "C++" }]; // TODO: Add more languages

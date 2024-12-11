@@ -1,7 +1,7 @@
 services:
-  python-runner:
+  cpp-runner:
     build: .
     command: tail -f /dev/null
-    container_name: python-script-runner
+    container_name: cpp-script-runner
     init: true
     restart: unless-stopped

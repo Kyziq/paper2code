@@ -8,6 +8,7 @@ import { executeFile, uploadFile } from "~/api";
 import { useStore } from "~/stores/useStore";
 import { ALLOWED_FILE_TYPES, LANGUAGES } from "~/utils/constants.ts";
 import type {
+	FileExecutionParams,
 	FileExecutionResponse,
 	FileUploadParams,
 	FileUploadResponse,
@@ -46,13 +47,13 @@ function Index() {
 			setConsoleMessage(result.message ?? "");
 			toast.success("File uploaded successfully. Proceeding to execution...");
 
-			// Check for code in the response data
-			if (result.data?.code) {
-				handleExecute(result.data.code);
-			} else {
-				toast.error("No code was extracted from the file");
+			// Run execute mutation if file upload is successful
+			if (result.data) {
+				executeMutation.mutate({
+					code: result.data.code,
+					language: result.data.language,
+				});
 			}
-
 			queryClient.invalidateQueries({ queryKey: ["fileStatus"] });
 		},
 		onError: (error: Error) => {
@@ -62,7 +63,8 @@ function Index() {
 	});
 
 	const executeMutation = useMutation({
-		mutationFn: (code: string) => executeFile(code),
+		mutationFn: (params: FileExecutionParams) =>
+			executeFile(params.code, params.language),
 		onSuccess: (response: FileExecutionResponse) => {
 			setConsoleMessage(response.data?.output ?? "");
 			toast.success("Code executed successfully");
@@ -78,10 +80,6 @@ function Index() {
 		if (!language) return toast.error("Please select a language.");
 		if (!file) return toast.error("Please upload a file.");
 		uploadMutation.mutate({ file, language });
-	};
-
-	const handleExecute = (filePath: string) => {
-		executeMutation.mutate(filePath);
 	};
 
 	const { getRootProps, getInputProps } = useDropzone({

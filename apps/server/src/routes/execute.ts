@@ -7,20 +7,19 @@ import type { FileExecutionResponse } from "~shared/types";
 export const executeRoute = new Elysia().post(
 	"/api/execute",
 	async ({ body }): Promise<FileExecutionResponse> => {
-		const { code } = body;
+		const { code, language } = body;
 
 		if (!code) {
 			logger.error("No code provided for execution");
 			throw new BadRequestError("No code provided");
 		}
 
-		logger.docker("Preparing to execute code");
+		logger.docker(
+			`Preparing to execute code for language ${language.toUpperCase()}`,
+		);
 
 		try {
-			const output = await runDockerContainer(code);
-			logger.docker("Execution completed");
-			logger.debug(`Execution output:\n${output}`);
-
+			const output = await runDockerContainer(code, language);
 			return {
 				message: "Code execution successful",
 				data: { output },
@@ -35,6 +34,7 @@ export const executeRoute = new Elysia().post(
 	{
 		body: t.Object({
 			code: t.String(),
+			language: t.String(),
 		}),
 		type: "json",
 		response: t.Object({

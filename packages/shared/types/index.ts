@@ -10,9 +10,15 @@ export interface ApiResponse<T = unknown> {
 
 export interface FileUploadResponseData {
 	code: string;
+	language: string;
 }
 
 export type FileUploadResponse = ApiResponse<FileUploadResponseData>;
+
+export interface FileExecutionParams {
+	code: string;
+	language: string;
+}
 
 export interface FileExecutionResponseData {
 	output: string;

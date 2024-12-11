@@ -13,6 +13,8 @@ export const ocrRoute = new Elysia().post(
 	"/api/ocr",
 	async ({ body, set }): Promise<FileUploadResponse> => {
 		const file = body.file[0];
+		const language = body.language;
+
 		if (!file) {
 			logger.error("No file uploaded");
 			throw new BadRequestError("No file uploaded");
@@ -46,6 +48,7 @@ export const ocrRoute = new Elysia().post(
 				message: "Text extraction successful",
 				data: {
 					code,
+					language,
 				},
 			};
 		} catch (error) {
@@ -59,6 +62,7 @@ export const ocrRoute = new Elysia().post(
 	{
 		body: t.Object({
 			file: t.Files(),
+			language: t.String(),
 		}),
 		type: "formdata",
 		response: t.Object({
@@ -66,6 +70,7 @@ export const ocrRoute = new Elysia().post(
 			data: t.Optional(
 				t.Object({
 					code: t.String(),
+					language: t.String(),
 				}),
 			),
 		}),
