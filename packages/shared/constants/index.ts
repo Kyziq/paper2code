@@ -10,7 +10,9 @@ export type SupportedMimeType =
 
 export const MAX_FILE_SIZES = {
 	[SUPPORTED_FILE_TYPES.PDF]: 5 * 1024 * 1024,
-	"image/*": 5 * 1024 * 1024,
+	[SUPPORTED_FILE_TYPES.JPG]: 5 * 1024 * 1024,
+	[SUPPORTED_FILE_TYPES.JPEG]: 5 * 1024 * 1024,
+	[SUPPORTED_FILE_TYPES.PNG]: 5 * 1024 * 1024,
 } as const;
 
 export const ACCEPTED_FILE_EXTENSIONS = {

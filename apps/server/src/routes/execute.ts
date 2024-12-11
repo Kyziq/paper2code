@@ -32,11 +32,14 @@ export const executeRoute = new Elysia().post(
 		}
 	},
 	{
+		// Request validation schema
 		body: t.Object({
 			code: t.String(),
 			language: t.String(),
 		}),
 		type: "json",
+
+		// Response validation schema
 		response: t.Object({
 			message: t.String(),
 			data: t.Optional(

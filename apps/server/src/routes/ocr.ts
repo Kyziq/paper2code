@@ -16,34 +16,36 @@ import type { FileUploadResponse } from "~shared/types";
 export const ocrRoute = new Elysia().post(
 	"/api/ocr",
 	async ({ body, set }): Promise<FileUploadResponse> => {
+		// Extract file and language from request body
 		const file = body.file[0];
 		const language = body.language;
 
+		// Validate file presence
 		if (!file) {
 			logger.error("No file uploaded");
 			throw new BadRequestError("No file uploaded");
 		}
 		logger.info(`Received file: ${file.name} (${file.type})`);
 
+		// Validate file type
 		const supportedTypes = Object.values(SUPPORTED_FILE_TYPES);
 		if (!supportedTypes.includes(file.type as SupportedMimeType)) {
 			logger.warn(`Unsupported file type: ${file.type}`);
 			throw new UnsupportedMediaTypeError(`Unsupported file type ${file.type}`);
 		}
 
-		const sizeLimit = file.type.startsWith("image/")
-			? MAX_FILE_SIZES["image/*"]
-			: MAX_FILE_SIZES[file.type as keyof typeof MAX_FILE_SIZES];
-
+		// Validate file size
+		const fileType = file.type as SupportedMimeType;
+		const sizeLimit = MAX_FILE_SIZES[fileType];
 		if (file.size > sizeLimit) {
+			const limitInMB = sizeLimit / (1024 * 1024);
 			logger.warn(
-				`File size (${(file.size / (1024 * 1024)).toFixed(2)} MB) exceeds limit`,
+				`File size (${(file.size / (1024 * 1024)).toFixed(2)} MB) exceeds ${limitInMB}MB limit`,
 			);
-			throw new PayloadTooLargeError(
-				`File size exceeds ${sizeLimit / (1024 * 1024)} MB limit`,
-			);
+			throw new PayloadTooLargeError(`File size exceeds ${limitInMB} MB limit`);
 		}
 
+		// Process the file through OCR
 		try {
 			logger.info(`Processing ${file.type} file: ${file.name}`);
 			const code = await processOCR(file);
@@ -65,11 +67,14 @@ export const ocrRoute = new Elysia().post(
 		}
 	},
 	{
+		// Request validation schema
 		body: t.Object({
 			file: t.Files(),
 			language: t.String(),
 		}),
 		type: "formdata",
+
+		// Response validation schema
 		response: t.Object({
 			message: t.String(),
 			data: t.Optional(
