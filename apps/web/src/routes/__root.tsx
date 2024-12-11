@@ -5,24 +5,42 @@ import { ThemeProvider } from "~/components/theme-provider";
 export const Route = createRootRoute({
 	component: () => (
 		<ThemeProvider>
-			<div className="flex flex-col min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
-				<header className="shadow-sm">
-					<nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-						<div className="flex justify-between items-center h-14">
-							<div className="items-center">
-								<Link to="/" className="flex-shrink-0">
-									<h3 className="text-lg font-semibold">paper2code</h3>
+			<div className="min-h-screen flex flex-col">
+				{/* Main background - subtle gradient */}
+				<div className="fixed inset-0 bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-950 dark:to-blue-950 -z-10" />
+
+				{/* Header with rich gradient */}
+				<header className="relative bg-gradient-to-r from-slate-900 via-blue-900 to-slate-900 dark:from-slate-800 dark:via-blue-800 dark:to-slate-800 shadow-lg">
+					{/* Subtle gradient overlay */}
+					<div className="absolute inset-0 bg-gradient-to-b from-white/[0.03] to-transparent" />
+
+					{/* Navigation content */}
+					<nav className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+						<div className="flex justify-between items-center h-16">
+							<div className="flex items-center">
+								<Link
+									to="/"
+									className="flex-shrink-0 transition-transform hover:scale-[1.02]"
+								>
+									<h3 className="text-lg font-semibold text-white">
+										paper2code
+									</h3>
 								</Link>
 							</div>
-							<div className="items-center">
+							<div className="flex items-center">
 								<ModeToggle />
 							</div>
 						</div>
 					</nav>
 				</header>
-				<main className="flex-grow">
+
+				{/* Main content */}
+				<main className="flex-grow relative">
 					<Outlet />
 				</main>
+
+				{/* Subtle gradient overlay for depth */}
+				<div className="fixed inset-0 bg-gradient-to-t from-transparent via-transparent to-white/[0.02] dark:to-black/[0.02] pointer-events-none" />
 			</div>
 		</ThemeProvider>
 	),
