@@ -1,5 +1,5 @@
 import { Elysia, t } from "elysia";
-import { runDockerContainer } from "~/services/dockerService";
+import { runContainer } from "~/services/docker";
 import { BadRequestError } from "~/utils/errors";
 import { logger } from "~/utils/logger";
 import type { SupportedLanguage } from "~shared/constants";
@@ -18,10 +18,7 @@ export const executeRoute = new Elysia().post(
 		logger.docker(`Preparing to execute code for language ${language}`);
 
 		try {
-			const output = await runDockerContainer(
-				code,
-				language as SupportedLanguage,
-			);
+			const output = await runContainer(code, language as SupportedLanguage);
 			return {
 				message: "Code execution successful",
 				data: { output },
