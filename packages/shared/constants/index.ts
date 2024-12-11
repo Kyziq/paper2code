@@ -20,6 +20,9 @@ export const ACCEPTED_FILE_EXTENSIONS = {
 	[SUPPORTED_FILE_TYPES.PDF]: [".pdf"],
 } as const;
 
-export const SUPPORTED_LANGUAGES = [{ value: "cpp", label: "C++" }] as const;
+export const SUPPORTED_LANGUAGES = [
+	{ value: "cpp", label: "C++" },
+	{ value: "java", label: "Java" },
+] as const;
 
 export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number]["value"];

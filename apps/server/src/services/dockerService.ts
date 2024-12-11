@@ -1,45 +1,149 @@
 import { exec } from "node:child_process";
 import util from "node:util";
 import { logger } from "~/utils/logger";
+import type { SupportedLanguage } from "~shared/constants";
 
 const execPromise = util.promisify(exec);
 
 const DOCKER_CONFIG = {
 	CONTAINER: {
-		NAME: "cpp-script-runner",
-		SERVICE: "cpp-runner",
+		CPP: {
+			NAME: "cpp-script-runner",
+			SERVICE: "cpp-runner",
+		},
+		JAVA: {
+			NAME: "java-script-runner",
+			SERVICE: "java-runner",
+		},
 	},
 	EXECUTION: {
 		TIMEOUT: 60000,
 		TEMP_FILE_PREFIX: "/tmp/temp",
 	},
+	USE_TEST_CODE: true,
+};
+
+const TEST_CODE = {
+	cpp: `#include <iostream>
+using namespace std;
+
+int main() {
+    cout << "Hello World from C++" << endl;
+    return 0;
+}`,
+	java: `public class Main {
+    public static void main(String[] args) {
+        System.out.println("Hello World from Java");
+    }
+}`,
 };
 
 /**
- * Constructs the Docker command sequence for compiling and running C++ code.
- * The sequence:
- * 1. Decodes base64 content to a .cpp file
- * 2. Compiles the file with g++
- * 3. Executes the compiled program
- * 4. Cleans up temporary files
+ * Extracts the public class name from Java code
+ * Returns null if no public class is found
  */
-const buildDockerCommand = (encodedContent: string): string => {
+const extractJavaClassName = (code: string): string | null => {
+	const classMatch = code.match(/public\s+class\s+(\w+)/);
+	return classMatch ? classMatch[1] : null;
+};
+
+/**
+ * Gets the code to execute - either test code or actual user code
+ */
+const getExecutableCode = (
+	content: string,
+	language: SupportedLanguage,
+): string => {
+	if (DOCKER_CONFIG.USE_TEST_CODE) {
+		logger.docker(`Using test code for ${language}`);
+		return TEST_CODE[language];
+	}
+
+	// Use the complete user-provided code as is
+	logger.docker(`Using user-provided code for ${language}`);
+	return content;
+};
+
+/**
+ * Constructs Docker commands for different languages
+ */
+const buildLanguageSpecificCommand = (
+	encodedContent: string,
+	language: SupportedLanguage,
+	executionId: string,
+): string => {
 	const { TEMP_FILE_PREFIX } = DOCKER_CONFIG.EXECUTION;
-	return [
-		`echo ${encodedContent} | base64 -d > ${TEMP_FILE_PREFIX}.cpp`,
-		`g++ ${TEMP_FILE_PREFIX}.cpp -o ${TEMP_FILE_PREFIX}`,
-		TEMP_FILE_PREFIX,
-		`rm -f ${TEMP_FILE_PREFIX}.cpp ${TEMP_FILE_PREFIX}`,
-	].join(" && ");
+
+	// Create unique directory for execution
+	const uniqueDir = `${TEMP_FILE_PREFIX}_${executionId}`;
+
+	switch (language) {
+		case "java": {
+			const code = Buffer.from(encodedContent, "base64").toString();
+			const className = extractJavaClassName(code);
+			if (!className) throw new Error("No public class found in Java code");
+			logger.docker(`Detected Java class name: ${className}`);
+
+			const commands = [
+				// Create unique directory
+				`mkdir -p ${uniqueDir}`,
+				// Write Java file with exact class name
+				`echo ${encodedContent} | base64 -d > ${uniqueDir}/${className}.java`,
+				// Compile in the unique directory
+				`javac ${uniqueDir}/${className}.java`,
+				// Execute from the unique directory
+				`cd ${uniqueDir} && java ${className}`,
+				// Clean up everything
+				`rm -rf ${uniqueDir}`,
+			];
+			return commands.join(" && ");
+		}
+
+		case "cpp": {
+			const sourceFile = "program.cpp";
+			const executableFile = "program";
+
+			const commands = [
+				// Create unique directory for isolation
+				`mkdir -p ${uniqueDir}`,
+				// Write source code to the unique directory
+				`echo ${encodedContent} | base64 -d > ${uniqueDir}/${sourceFile}`,
+				// Compile in the unique directory
+				`g++ ${uniqueDir}/${sourceFile} -o ${uniqueDir}/${executableFile}`,
+				// Execute from the unique directory
+				`cd ${uniqueDir} && ./${executableFile}`,
+				// Clean up everything
+				`rm -rf ${uniqueDir}`,
+			];
+
+			return commands.join(" && ");
+		}
+
+		default:
+			throw new Error(`Unsupported language: ${language}`);
+	}
 };
 
 /**
- * Constructs the full execution command based on the host OS platform.
- * Windows requires PowerShell wrapping, while Unix-like systems use direct shell commands.
+ * Gets the appropriate Docker service name based on the language
  */
-const buildExecutionCommand = (dockerCommand: string): string => {
-	const { SERVICE } = DOCKER_CONFIG.CONTAINER;
-	const baseCommand = `docker compose exec -T ${SERVICE} sh -c '${dockerCommand}'`;
+const getDockerService = (language: SupportedLanguage): string => {
+	const services = {
+		cpp: DOCKER_CONFIG.CONTAINER.CPP.SERVICE,
+		java: DOCKER_CONFIG.CONTAINER.JAVA.SERVICE,
+	};
+	return services[language];
+};
+
+/**
+ * Constructs the full execution command based on the host OS platform
+ */
+const buildExecutionCommand = (
+	dockerCommand: string,
+	language: SupportedLanguage,
+): string => {
+	const service = getDockerService(language);
+	const baseCommand = `docker compose exec -T ${service} sh -c '${dockerCommand}'`;
 
 	return process.platform === "win32"
 		? `powershell -Command "& {${baseCommand}}"`
@@ -47,48 +151,46 @@ const buildExecutionCommand = (dockerCommand: string): string => {
 };
 
 /**
- * Executes C++ code inside a Docker container with proper isolation.
- * The process:
- * 1. Wraps the user code in a complete C++ program
- * 2. Encodes the program in base64 for safe transmission
- * 3. Executes the code in an isolated container
- * 4. Returns the program output
+ * Executes code inside a Docker container with proper isolation.
  *
- * @param content - The C++ code to execute
+ * @param content - The source code to execute
+ * @param language - The programming language of the code
  * @returns Promise<string> The stdout output from the code execution
  * @throws Error if compilation or execution fails
  */
+
 export const runDockerContainer = async (
 	content: string,
-	language: string,
+	language: SupportedLanguage,
 ): Promise<string> => {
 	const executionId = `${language}-${Date.now()}`;
 
 	try {
-		// TESTING PURPOSE
-		const TESTING = `
-#include <iostream>
-using namespace std;
-
-int main() {
-    cout << "Hello world123123" << endl;
-    return 0;
-}`;
-
-		const encodedContent = Buffer.from(TESTING).toString("base64");
+		// Get either test code or actual user code
+		const codeToExecute = getExecutableCode(content, language);
+		const encodedContent = Buffer.from(codeToExecute).toString("base64");
 		logger.docker(`Code prepared for execution [ID: ${executionId}]`);
+		logger.docker(
+			`Using ${DOCKER_CONFIG.USE_TEST_CODE ? "test" : "user-provided"} code`,
+		);
 
 		// Construct and execute the command
-		const dockerCommand = buildDockerCommand(encodedContent);
-		const command = buildExecutionCommand(dockerCommand);
+		const dockerCommand = buildLanguageSpecificCommand(
+			encodedContent,
+			language,
+			executionId,
+		);
+		const command = buildExecutionCommand(dockerCommand, language);
 		logger.docker(`Running command in container [ID: ${executionId}]`);
-
-		const { stdout } = await execPromise(command, {
+		const { stdout, stderr } = await execPromise(command, {
 			timeout: DOCKER_CONFIG.EXECUTION.TIMEOUT,
 		});
 		logger.success(`Execution completed [ID: ${executionId}]`);
 		logger.success(`Program output:\n${stdout.trim()}`);
 
+		if (stderr) {
+			logger.error(`Error output:\n${stderr.trim()}`);
+		}
 		return stdout.trim();
 	} catch (error) {
 		const errorMessage = error instanceof Error ? error.message : String(error);

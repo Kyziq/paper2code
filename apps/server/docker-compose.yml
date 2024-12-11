@@ -1,7 +1,18 @@
 services:
   cpp-runner:
-    build: .
-    command: tail -f /dev/null
+    build:
+      context: .
+      dockerfile: Dockerfile.cpp
+    # command: tail -f /dev/null
     container_name: cpp-script-runner
+    init: true
+    restart: unless-stopped
+
+  java-runner:
+    build:
+      context: .
+      dockerfile: Dockerfile.java
+    # command: tail -f /dev/null
+    container_name: java-script-runner
     init: true
     restart: unless-stopped
