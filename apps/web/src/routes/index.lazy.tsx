@@ -87,6 +87,10 @@ function Index() {
 
 	const { getRootProps, getInputProps } = useDropzone({
 		onDrop: (acceptedFiles) => setFile(acceptedFiles[0]),
+		onDropRejected: () =>
+			toast.error(
+				`Invalid file type. Please upload a file with one of the following extensions: ${Object.values(ACCEPTED_FILE_EXTENSIONS).flat().join(", ")}`,
+			),
 		accept: ACCEPTED_FILE_EXTENSIONS,
 		multiple: false,
 	});
