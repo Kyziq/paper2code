@@ -21,6 +21,10 @@ export const Route = createRootRoute({
 								<Link
 									to="/"
 									className="flex-shrink-0 transition-transform hover:scale-[1.02]"
+									onClick={(e) => {
+										e.preventDefault();
+										window.location.href = window.location.pathname;
+									}}
 								>
 									<h3 className="text-lg font-semibold text-white">
 										paper2code
