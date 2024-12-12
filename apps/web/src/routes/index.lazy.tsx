@@ -18,6 +18,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "~/components/ui/select";
+import { cn } from "~/lib/utils";
 import { useStore } from "~/stores/useStore";
 import {
 	ACCEPTED_FILE_EXTENSIONS,
@@ -82,8 +83,10 @@ function Index() {
 		},
 	});
 
-	const { getRootProps, getInputProps, isDragActive } = useDropzone({
-		onDrop: (acceptedFiles) => setFile(acceptedFiles[0]),
+	const { getRootProps, getInputProps } = useDropzone({
+		onDrop: (acceptedFiles) => {
+			setFile(acceptedFiles[0]);
+		},
 		onDropRejected: () =>
 			toast.error(
 				`Invalid file type. Please upload: ${Object.values(
@@ -112,7 +115,6 @@ function Index() {
 				layout
 			>
 				<div className="flex relative">
-					{/* Main Content */}
 					<motion.div className="flex-1 p-8" layout>
 						<motion.div
 							className={`${showConsole ? "max-w-md" : "max-w-xl"} mx-auto transition-all duration-500`}
@@ -121,27 +123,21 @@ function Index() {
 							<h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent mb-2">
 								paper2code
 							</h1>
-							<p className="mb-8 text-slate-600 dark:text-slate-300">
+							<p className="mb-6 text-slate-600 dark:text-slate-300">
 								Execute your handwritten code with ease.
 							</p>
 
-							<div className="space-y-6">
-								<div>
-									<Label
-										htmlFor="language-select"
-										className="text-sm font-medium text-slate-700 dark:text-slate-200"
-									>
+							<div className="space-y-4">
+								<div className="space-y-1.5 max-w-[180px]">
+									<Label htmlFor="language-select" className="text-sm">
 										Programming Language
 									</Label>
 									<Select
 										onValueChange={setLanguage}
 										value={language || undefined}
 									>
-										<SelectTrigger
-											id="language-select"
-											className="mt-1.5 w-full"
-										>
-											<SelectValue placeholder="Choose a language..." />
+										<SelectTrigger id="language-select">
+											<SelectValue placeholder="Choose..." />
 										</SelectTrigger>
 										<SelectContent>
 											{SUPPORTED_LANGUAGES.map(({ value, label }) => (
@@ -154,17 +150,13 @@ function Index() {
 								</div>
 
 								<div>
-									<Label className="text-sm font-medium text-slate-700 dark:text-slate-200">
-										Code File
-									</Label>
+									<Label className="text-sm">Code File</Label>
 									<div
 										{...getRootProps()}
-										className={`mt-1.5 rounded-lg border-2 border-dashed transition-colors duration-200
-                      ${
-												isDragActive
-													? "border-blue-500 bg-blue-50 dark:border-blue-400 dark:bg-blue-900/10"
-													: "border-slate-200 dark:border-slate-700 hover:border-blue-500 dark:hover:border-blue-400"
-											}`}
+										className={cn(
+											"mt-1.5 bg-background border rounded-md transition-colors duration-200",
+											"hover:border-blue-500",
+										)}
 									>
 										<div className="px-6 py-10 text-center cursor-pointer">
 											<input {...getInputProps()} />
@@ -221,7 +213,6 @@ function Index() {
 						</motion.div>
 					</motion.div>
 
-					{/* Console Section */}
 					{showConsole && (
 						<motion.div
 							initial={{ width: 0, opacity: 0 }}
