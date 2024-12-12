@@ -18,7 +18,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "~/components/ui/select";
-import { cn } from "~/lib/utils";
+import { cn, isMobile } from "~/lib/utils";
 import { useStore } from "~/stores/useStore";
 import {
 	ACCEPTED_FILE_EXTENSIONS,
@@ -109,18 +109,18 @@ function Index() {
 	};
 
 	return (
-		<div className="flex-grow flex items-center justify-center p-4 sm:p-6 lg:p-8">
+		<div className="flex-grow flex flex-col lg:items-center justify-center p-4 sm:p-6 lg:p-8">
 			<motion.div
 				className="w-full max-w-6xl overflow-hidden rounded-2xl"
 				layout
 			>
-				<div className="flex relative">
-					<motion.div className="flex-1 p-8" layout>
+				<div className="flex flex-col lg:flex-row relative">
+					<motion.div className="flex-1 p-4 sm:p-6 lg:p-8" layout>
 						<motion.div
-							className={`${showConsole ? "max-w-md" : "max-w-xl"} mx-auto transition-all duration-500`}
+							className="mx-auto transition-all duration-500 w-full lg:max-w-xl"
 							layout
 						>
-							<h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent mb-2">
+							<h1 className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent mb-2">
 								paper2code
 							</h1>
 							<p className="mb-6 text-slate-600 dark:text-slate-300">
@@ -158,11 +158,11 @@ function Index() {
 											"hover:border-blue-500",
 										)}
 									>
-										<div className="px-6 py-10 text-center cursor-pointer">
+										<div className="px-4 sm:px-6 py-8 sm:py-10 text-center cursor-pointer">
 											<input {...getInputProps()} />
 											{file ? (
 												<div className="text-slate-700 dark:text-slate-200">
-													<FileText className="mx-auto h-12 w-12 text-blue-500 dark:text-blue-400 mb-4" />
+													<FileText className="mx-auto h-10 sm:h-12 w-10 sm:w-12 text-blue-500 dark:text-blue-400 mb-4" />
 													<p className="font-medium">{file.name}</p>
 													<p className="mt-1 text-sm text-slate-500">
 														Click or drag to replace
@@ -170,7 +170,7 @@ function Index() {
 												</div>
 											) : (
 												<div>
-													<FileText className="mx-auto h-12 w-12 text-blue-500 dark:text-blue-400" />
+													<FileText className="mx-auto h-10 sm:h-12 w-10 sm:w-12 text-blue-500 dark:text-blue-400" />
 													<div className="mt-4">
 														<span className="text-blue-600 dark:text-blue-400 font-medium">
 															Upload a file
@@ -215,19 +215,20 @@ function Index() {
 
 					{showConsole && (
 						<motion.div
-							initial={{ width: 0, opacity: 0 }}
-							animate={{
-								width: "50%",
-								opacity: 1,
-								transition: { duration: 0.5, ease: [0.32, 0.72, 0, 1] },
-							}}
-							className="relative"
+							initial={isMobile() ? { height: 0 } : { width: 0 }}
+							animate={
+								isMobile()
+									? { height: 300, opacity: 1 }
+									: { width: "50%", opacity: 1 }
+							}
+							transition={{ duration: 0.5, ease: [0.32, 0.72, 0, 1] }}
+							className="w-full lg:w-1/2"
 						>
 							<motion.div
 								initial={{ opacity: 0 }}
 								animate={{ opacity: 1 }}
 								transition={{ delay: 0.3, duration: 0.3 }}
-								className="absolute inset-0 p-6"
+								className="p-4 sm:p-6 h-[300px] lg:h-full"
 							>
 								<Console message={getConsoleMessage()} />
 							</motion.div>
