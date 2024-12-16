@@ -23,6 +23,7 @@ import { useStore } from "~/stores/useStore";
 import {
 	ACCEPTED_FILE_EXTENSIONS,
 	SUPPORTED_LANGUAGES,
+	type SupportedLanguage,
 } from "~shared/constants";
 import type {
 	FileExecutionParams,
@@ -40,24 +41,28 @@ function Index() {
 		file,
 		language,
 		consoleMessage,
+		ocrResult,
 		setFile,
 		setLanguage,
 		setConsoleMessage,
+		setOcrResult,
 	} = useStore();
+
 	const queryClient = useQueryClient();
 	const [showConsole, setShowConsole] = useState(false);
 
 	const uploadMutation = useMutation({
 		mutationFn: (data: FileUploadParams) => uploadFile(data),
 		onSuccess: (result: FileUploadResponse) => {
-			setConsoleMessage(result.message ?? "");
-			toast.success("File uploaded successfully. Proceeding to execution...");
-			setShowConsole(true);
-
 			if (result.data) {
+				setConsoleMessage(result.message);
+				setOcrResult(result.data.code);
+				toast.success("File uploaded successfully. Proceeding to execution...");
+				setShowConsole(true);
+
 				executeMutation.mutate({
 					code: result.data.code,
-					language: result.data.language,
+					language: result.data.language as SupportedLanguage,
 				});
 			}
 			queryClient.invalidateQueries({ queryKey: ["fileStatus"] });
@@ -133,7 +138,9 @@ function Index() {
 										Programming Language
 									</Label>
 									<Select
-										onValueChange={setLanguage}
+										onValueChange={(value: SupportedLanguage) =>
+											setLanguage(value)
+										}
 										value={language || undefined}
 									>
 										<SelectTrigger id="language-select">
@@ -196,9 +203,8 @@ function Index() {
 										uploadMutation.mutate({ file, language });
 									}}
 									disabled={isProcessing}
-									className="w-full h-11 bg-blue-800 hover:bg-blue-900 dark:bg-blue-600
-                    dark:hover:bg-blue-700 text-white shadow-lg hover:shadow-xl
-                    transition-all duration-200"
+									className="w-full"
+									size="lg"
 								>
 									{isProcessing ? (
 										<LoadingSpinner className="h-5 w-5 border-white border-t-transparent" />
@@ -228,9 +234,22 @@ function Index() {
 								initial={{ opacity: 0 }}
 								animate={{ opacity: 1 }}
 								transition={{ delay: 0.3, duration: 0.3 }}
-								className="p-4 sm:p-6 h-[300px] lg:h-full"
+								className="p-4 sm:p-6 flex flex-col h-[300px] lg:h-full"
 							>
-								<Console message={getConsoleMessage()} />
+								<Console
+									message={getConsoleMessage()}
+									ocrResult={ocrResult}
+									language={language}
+									isProcessing={isProcessing}
+									onExecute={(code) => {
+										if (!language) {
+											toast.error("Please select a language");
+											return;
+										}
+										executeMutation.mutate({ code, language });
+									}}
+									showEditButton={uploadMutation.isSuccess}
+								/>
 							</motion.div>
 						</motion.div>
 					)}
