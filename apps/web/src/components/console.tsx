@@ -1,3 +1,6 @@
+import { cpp } from "@codemirror/lang-cpp";
+import { java } from "@codemirror/lang-java";
+import CodeMirror from "@uiw/react-codemirror";
 import { Pencil, Terminal } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
@@ -11,7 +14,6 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "~/components/ui/dialog";
-import { Textarea } from "~/components/ui/textarea";
 import type { SupportedLanguage } from "~shared/constants";
 
 interface ConsoleProps {
@@ -73,6 +75,8 @@ export const Console = ({
 		setEditableCode(ocrResult || "");
 		toast.info("Code reset to original OCR result");
 	};
+
+	const extensions = language === "cpp" ? [cpp()] : [java()];
 
 	return (
 		<div className="relative w-full h-full group">
@@ -190,13 +194,40 @@ export const Console = ({
 					</DialogHeader>
 
 					<div className="flex-1 px-6 py-4">
-						<Textarea
+						<CodeMirror
 							value={editableCode}
-							onChange={(e) => setEditableCode(e.target.value)}
-							className="min-h-[400px] font-caskaydiaCoveNerd text-sm leading-relaxed bg-muted/20 resize-none focus-visible:ring-offset-0 border-muted"
-							disabled={isProcessing}
-							spellCheck={false}
-							placeholder="// Your code will appear here"
+							height="400px"
+							theme="dark"
+							extensions={extensions}
+							onChange={(value) => setEditableCode(value)}
+							className="font-caskaydiaCoveNerd text-sm"
+							editable={!isProcessing}
+							basicSetup={{
+								lineNumbers: true,
+								highlightActiveLineGutter: true,
+								highlightSpecialChars: true,
+								history: true,
+								foldGutter: true,
+								drawSelection: true,
+								dropCursor: true,
+								allowMultipleSelections: true,
+								indentOnInput: true,
+								syntaxHighlighting: true,
+								bracketMatching: true,
+								closeBrackets: true,
+								autocompletion: true,
+								rectangularSelection: true,
+								crosshairCursor: true,
+								highlightActiveLine: true,
+								highlightSelectionMatches: true,
+								closeBracketsKeymap: true,
+								defaultKeymap: true,
+								searchKeymap: true,
+								historyKeymap: true,
+								foldKeymap: true,
+								completionKeymap: true,
+								lintKeymap: true,
+							}}
 						/>
 					</div>
 
