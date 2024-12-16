@@ -64,6 +64,10 @@ export const ocrRoute = new Elysia().post(
 			set.status = 500;
 			return {
 				message: `Error during OCR processing: ${(error as Error).message}`,
+				data: {
+					code: "",
+					language,
+				},
 			};
 		}
 	},
