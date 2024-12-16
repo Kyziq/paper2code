@@ -1,10 +1,12 @@
 import type { SupportedLanguage } from "~shared/constants";
 import { cppHandler } from "./cpp";
 import { javaHandler } from "./java";
+import { pythonHandler } from "./python";
 
 const handlers = {
 	cpp: cppHandler,
 	java: javaHandler,
+	python: pythonHandler,
 } as const;
 
 export const getLanguageHandler = (language: SupportedLanguage) => {

@@ -1,0 +1,12 @@
+FROM python:3.11-slim
+
+# Create a non-root user for security
+RUN useradd -m -s /bin/bash runner && \
+    mkdir -p /tmp && \
+    chown -R runner:runner /tmp
+
+# Switch to non-root user
+USER runner
+
+# Keep container running
+CMD ["tail", "-f", "/dev/null"]

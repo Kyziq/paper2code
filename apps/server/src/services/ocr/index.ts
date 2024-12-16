@@ -24,6 +24,7 @@ int main() {
         System.out.println("Hello World from Java");
     }
 }`,
+	python: `print("Hello World from Python")`,
 };
 
 export async function processOCR(

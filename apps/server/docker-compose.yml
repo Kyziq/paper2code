@@ -12,7 +12,14 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.java
-    # command: tail -f /dev/null
     container_name: java-script-runner
+    init: true
+    restart: unless-stopped
+
+  python-runner:
+    build:
+      context: .
+      dockerfile: Dockerfile.python
+    container_name: python-script-runner
     init: true
     restart: unless-stopped
