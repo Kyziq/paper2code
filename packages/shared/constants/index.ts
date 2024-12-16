@@ -21,8 +21,18 @@ export const ACCEPTED_FILE_EXTENSIONS = {
 } as const;
 
 export const SUPPORTED_LANGUAGES = [
-	{ value: "cpp", label: "C++" },
-	{ value: "java", label: "Java" },
+	{
+		value: "cpp",
+		label: "C++",
+	},
+	{
+		value: "java",
+		label: "Java",
+	},
+	{
+		value: "python",
+		label: "Python",
+	},
 ] as const;
 
 export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number]["value"];
