@@ -147,9 +147,16 @@ function Index() {
 											<SelectValue placeholder="Choose..." />
 										</SelectTrigger>
 										<SelectContent>
-											{SUPPORTED_LANGUAGES.map(({ value, label }) => (
+											{SUPPORTED_LANGUAGES.map(({ value, label, icon }) => (
 												<SelectItem key={value} value={value}>
-													{label}
+													<div className="flex items-center gap-2">
+														<img
+															src={icon}
+															alt={`${label} icon`}
+															className="w-5 h-5"
+														/>
+														{label}
+													</div>
 												</SelectItem>
 											))}
 										</SelectContent>

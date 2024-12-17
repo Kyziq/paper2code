@@ -24,14 +24,17 @@ export const SUPPORTED_LANGUAGES = [
 	{
 		value: "cpp",
 		label: "C++",
+		icon: "/assets/icons/cpp.svg",
 	},
 	{
 		value: "java",
 		label: "Java",
+		icon: "/assets/icons/java.svg",
 	},
 	{
 		value: "python",
 		label: "Python",
+		icon: "/assets/icons/python.svg",
 	},
 ] as const;
 
