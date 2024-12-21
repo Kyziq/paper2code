@@ -10,25 +10,20 @@ export const executeRoute = new Elysia().post(
 	async ({ body }): Promise<FileExecutionResponse> => {
 		const { code, language } = body;
 
-		if (!code) {
-			logger.error("No code provided for execution");
-			throw new BadRequestError("No code provided");
-		}
-
-		logger.docker(`Preparing to execute code for language ${language}`);
-
-		try {
-			const output = await runContainer(code, language as SupportedLanguage);
-			return {
-				message: "Code execution successful",
-				data: { output },
-			};
-		} catch (error) {
-			logger.error(`Execution failed: ${(error as Error).message}`);
-			throw new Error(
-				`Error during code execution: ${(error as Error).message}`,
+		// Input validation
+		if (!code?.trim()) {
+			logger.error("Empty or missing code provided for execution");
+			throw new BadRequestError(
+				"[ERROR] Empty or missing code provided for execution",
 			);
 		}
+
+		const output = await runContainer(code, language as SupportedLanguage);
+		logger.success(`Execution output:\n${output}`);
+		return {
+			message: "Code execution successful",
+			data: { output },
+		};
 	},
 	{
 		// Request validation schema
