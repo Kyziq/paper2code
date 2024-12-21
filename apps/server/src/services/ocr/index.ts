@@ -50,7 +50,7 @@ export async function processOCR(
 				? await processPDF(file.name)
 				: await processImage(file.name);
 
-		logger.success(`OCR process completed successfully for ${file.name}`);
+		logger.ocr(`OCR process completed successfully for ${file.name}`);
 		return result;
 	} finally {
 		if (!TEST_MODE) {
