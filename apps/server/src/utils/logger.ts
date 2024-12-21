@@ -31,75 +31,18 @@ const logConfig = {
 		delete: { icon: "🗑️", color: pc.red },
 	},
 	isProd: import.meta.env?.PROD,
-	// Base directory to show relative paths from
-	baseDir: path.resolve("apps/server"),
 };
 
 class Logger {
-	private formatPath(filepath: string): string {
-		try {
-			// Convert absolute path to relative path from baseDir
-			const relativePath = path.relative(logConfig.baseDir, filepath);
-
-			// If the path is still too long, show just the last 2-3 segments
-			if (relativePath.length > 50) {
-				const parts = relativePath.split(path.sep);
-				return pc.dim(`.../${parts.slice(-2).join("/")}`);
-			}
-
-			return pc.dim(relativePath);
-		} catch {
-			// If there's any error in path processing, return the original
-			return filepath;
-		}
-	}
-
-	private formatFilename(filename: string): string {
-		// Common file patterns
-		const filePatterns = [
-			/^[\w-]+\.(?:jpg|jpeg|png|gif|pdf)$/i, // Image/PDF files
-			/^[\w-]+_\d+\.[\w]+$/i, // Files with timestamps
-			/^ocr_result_\d+\.[\w]+$/i, // OCR result files
-		];
-
-		if (filePatterns.some((pattern) => pattern.test(filename))) {
-			// Make filenames stand out with bold and a different color
-			return pc.bold(pc.blue(filename));
-		}
-
-		return pc.dim(filename);
-	}
-
 	private getTimestamp() {
 		return pc.dim(formatTimestamp(new Date(), { showMilliseconds: true }));
-	}
-
-	private formatMessage(message: unknown): string {
-		const messageStr = typeof message !== "string" ? String(message) : message;
-
-		// First handle full paths
-		const withFormattedPaths = messageStr.replace(
-			/(^|[^\\])([A-Z]:\\(?:[^\\]+\\)*[^\\]+)/g,
-			(_: string, prefix: string, filepath: string) =>
-				prefix + this.formatPath(filepath),
-		);
-
-		// Then handle filenames
-		return withFormattedPaths.replace(
-			/(?:^|\s|\/)([\w-]+(?:_\d+)?\.[\w]+)(?=\s|$|\/)/g,
-			(matchStr: string, filename: string, offset: number) => {
-				// Preserve any leading whitespace/characters
-				const prefix = matchStr.substring(0, matchStr.indexOf(filename));
-				return prefix + this.formatFilename(filename);
-			},
-		);
 	}
 
 	private log(level: LogLevel, message: unknown) {
 		if (logConfig.isProd) return;
 		const { icon, color } = logConfig.styles[level];
 		const prefix = `${icon} ${color(pc.bold(`[${level.toUpperCase()}]`))}`;
-		const formattedMessage = `${this.getTimestamp()} ${prefix} ${this.formatMessage(message)}`;
+		const formattedMessage = `${this.getTimestamp()} ${prefix} ${message}`;
 		console[level === "error" ? "error" : "log"](formattedMessage);
 	}
 
@@ -159,23 +102,19 @@ class Logger {
 
 					paragraph.words?.forEach((word, wordIndex) => {
 						const wordText = word.symbols?.map((s) => s.text).join("") ?? "";
-						const confidence = this.getConfidenceColor(word.confidence);
 						console.log(
 							pc.gray(
-								`    Word ${wordIndex + 1}: ${pc.white(wordText)} - Confidence: ${confidence}`,
+								`    Word ${wordIndex + 1}: ${pc.white(wordText)} - Confidence: ${this.formatConfidence(word.confidence)}`,
 							),
 						);
 
 						word.symbols?.forEach((symbol, symbolIndex) => {
-							const symbolConfidence = this.getConfidenceColor(
-								symbol.confidence,
-							);
 							const breakInfo = symbol.property?.detectedBreak?.type
 								? ` [${symbol.property.detectedBreak.type}]`
 								: "";
 							console.log(
 								pc.gray(
-									`      Symbol ${symbolIndex + 1}: ${pc.white(symbol.text)} - Confidence: ${symbolConfidence}${breakInfo}`,
+									`      Symbol ${symbolIndex + 1}: ${pc.white(symbol.text)} - Confidence: ${this.formatConfidence(symbol.confidence)}${breakInfo}`,
 								),
 							);
 						});
@@ -188,18 +127,6 @@ class Logger {
 
 	private formatConfidence(confidence: number | null | undefined): string {
 		return confidence?.toFixed(2) ?? "N/A";
-	}
-
-	private getConfidenceColor(confidence: number | null | undefined): string {
-		if (!confidence) return pc.yellow("N/A");
-
-		if (confidence >= 0.9) {
-			return pc.green(confidence.toFixed(2));
-		}
-		if (confidence >= 0.7) {
-			return pc.yellow(confidence.toFixed(2));
-		}
-		return pc.red(confidence.toFixed(2));
 	}
 }
 
