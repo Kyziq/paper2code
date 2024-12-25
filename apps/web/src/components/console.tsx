@@ -1,6 +1,7 @@
 import { cpp } from "@codemirror/lang-cpp";
 import { java } from "@codemirror/lang-java";
-import CodeMirror from "@uiw/react-codemirror";
+import { python } from "@codemirror/lang-python";
+import CodeMirror, { EditorView } from "@uiw/react-codemirror";
 import { Pencil, Terminal } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
@@ -76,7 +77,21 @@ export const Console = ({
 		toast.info("Code reset to original OCR result");
 	};
 
-	const extensions = language === "cpp" ? [cpp()] : [java()];
+	const extensions = [
+		// Choose language extension based on the selected language
+		...(() => {
+			switch (language) {
+				case "cpp":
+					return [cpp()];
+				case "python":
+					return [python()];
+				default:
+					return [java()];
+			}
+		})(),
+		// Enable line wrapping
+		EditorView.lineWrapping,
+	];
 
 	return (
 		<div className="relative w-full h-full group">
