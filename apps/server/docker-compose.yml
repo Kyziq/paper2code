@@ -1,26 +1,26 @@
 name: paper2code
 services:
-  cpp-runner:
+  cpp_runner:
     build:
       context: .
       dockerfile: Dockerfile.cpp
     # command: tail -f /dev/null
-    container_name: cpp-script-runner
+    container_name: cpp_script_runner
     init: true
     restart: unless-stopped
 
-  java-runner:
+  java_runner:
     build:
       context: .
       dockerfile: Dockerfile.java
-    container_name: java-script-runner
+    container_name: java_script_runner
     init: true
     restart: unless-stopped
 
-  python-runner:
+  python_runner:
     build:
       context: .
       dockerfile: Dockerfile.python
-    container_name: python-script-runner
+    container_name: python_script_runner
     init: true
     restart: unless-stopped
