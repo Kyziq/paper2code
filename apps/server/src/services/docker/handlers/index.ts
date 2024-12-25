@@ -3,6 +3,11 @@ import { cppHandler } from "./cpp";
 import { javaHandler } from "./java";
 import { pythonHandler } from "./python";
 
+export interface LanguageHandler {
+	getServiceName: () => string;
+	buildCommand: (encodedContent: string, executionId: string) => string;
+}
+
 const handlers = {
 	cpp: cppHandler,
 	java: javaHandler,

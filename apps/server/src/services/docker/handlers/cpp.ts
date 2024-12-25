@@ -1,8 +1,9 @@
 import { DOCKER_CONFIG } from "../config";
+import type { LanguageHandler } from "../handlers";
 
-export const cppHandler = {
+export const cppHandler: LanguageHandler = {
 	// Return the Docker service name for C++ execution
-	getServiceName: () => "cpp-runner",
+	getServiceName: () => DOCKER_CONFIG.CONTAINER.CPP.SERVICE,
 
 	// Build the command to execute C++ code
 	buildCommand: (encodedContent: string, executionId: string) => {

@@ -1,16 +1,20 @@
 export const DOCKER_CONFIG = {
-	CONTAINER: {
-		CPP: {
-			NAME: "cpp-script-runner",
-			SERVICE: "cpp-runner",
-		},
-		JAVA: {
-			NAME: "java-script-runner",
-			SERVICE: "java-runner",
-		},
-	},
+  CONTAINER: {
+    CPP: {
+      NAME: "cpp_script_runner",
+      SERVICE: "cpp_runner",
+    },
+    JAVA: {
+      NAME: "java_script_runner",
+      SERVICE: "java_runner",
+    },
+    PYTHON: {
+      NAME: "python_script_runner",
+      SERVICE: "python_runner",
+    }
+  },
 	EXECUTION: {
-		TIMEOUT: 60000,
+		TIMEOUT: 10000, // 10 seconds
 		TEMP_FILE_PREFIX: "/tmp/temp",
 	},
 } as const;

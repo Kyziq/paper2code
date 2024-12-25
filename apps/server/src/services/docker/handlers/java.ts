@@ -1,8 +1,9 @@
 import { DOCKER_CONFIG } from "../config";
+import type { LanguageHandler } from "../handlers";
 
-export const javaHandler = {
+export const javaHandler: LanguageHandler = {
 	// Return the Docker service name for Java execution
-	getServiceName: () => "java-runner",
+	getServiceName: () => DOCKER_CONFIG.CONTAINER.JAVA.SERVICE,
 
 	// Build the command to execute Java code
 	buildCommand: (encodedContent: string, executionId: string) => {

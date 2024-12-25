@@ -1,8 +1,9 @@
 import { DOCKER_CONFIG } from "../config";
+import type { LanguageHandler } from "../handlers";
 
-export const pythonHandler = {
+export const pythonHandler: LanguageHandler = {
 	// Return the Docker service name for Python execution
-	getServiceName: () => "python-runner",
+	getServiceName: () => DOCKER_CONFIG.CONTAINER.PYTHON.SERVICE,
 
 	// Build the command to execute Python code
 	buildCommand: (encodedContent: string, executionId: string) => {
