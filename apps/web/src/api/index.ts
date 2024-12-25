@@ -14,12 +14,11 @@ export const uploadFile = async (
 	formData.append("language", language);
 
 	try {
-		const response = await kyInstance
+		return await kyInstance
 			.post("ocr", {
 				body: formData,
 			})
 			.json<FileUploadResponse>();
-		return response;
 	} catch (error) {
 		if (error instanceof Error) {
 			throw new Error(error.message);
@@ -28,17 +27,16 @@ export const uploadFile = async (
 	}
 };
 
-export const executeFile = async (
+export const executeCode = async (
 	code: string,
 	language: string,
 ): Promise<FileExecutionResponse> => {
 	try {
-		const response = await kyInstance
+		return await kyInstance
 			.post("execute", {
 				json: { code, language },
 			})
 			.json<FileExecutionResponse>();
-		return response;
 	} catch (error) {
 		if (error instanceof Error) {
 			throw new Error(error.message);

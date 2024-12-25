@@ -6,7 +6,7 @@ import { useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
 
-import { executeFile, uploadFile } from "~/api";
+import { executeCode, uploadFile } from "~/api";
 import { Console } from "~/components/console";
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
@@ -76,7 +76,7 @@ function Index() {
 
 	const executeMutation = useMutation({
 		mutationFn: (params: FileExecutionParams) =>
-			executeFile(params.code, params.language),
+			executeCode(params.code, params.language),
 		onSuccess: (response: FileExecutionResponse) => {
 			setConsoleMessage(response.data?.output ?? "");
 			toast.success("Code executed successfully");
