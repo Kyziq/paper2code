@@ -24,6 +24,7 @@
 		"ky": "^1.7.4",
 		"lucide-react": "^0.469.0",
 		"react-dropzone": "^14.3.5",
+		"react-resizable-panels": "^2.1.7",
 		"sonner": "^1.7.1",
 		"tailwind-merge": "^2.5.5",
 		"tailwindcss-animate": "^1.0.7",
