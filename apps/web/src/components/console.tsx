@@ -196,12 +196,21 @@ export const Console = ({
 							<DialogTitle className="text-lg font-semibold">
 								Code Editor
 							</DialogTitle>
-							<Badge
+							{ language && (
+									<Badge
+										variant={language}
+										showIcon={true}
+										className="px-2 py-0.5 text-xs font-medium"
+									>
+										{language?.toUpperCase()}
+										</Badge>
+								)}
+							{/* <Badge
 								variant="secondary"
 								className="px-2 py-0.5 text-xs font-medium"
 							>
 								{language?.toUpperCase() ?? "No Language"}
-							</Badge>
+							</Badge> */}
 						</div>
 						<p className="text-sm text-muted-foreground">
 							Review and edit the detected code before execution
