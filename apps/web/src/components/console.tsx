@@ -246,26 +246,23 @@ export const Console = ({
 						/>
 					</div>
 
-					<DialogFooter className="px-6 py-4 border-t bg-muted/10">
-						<div className="flex w-full items-center justify-between">
-							<Button
-								variant="outline"
-								onClick={handleReset}
-								disabled={isProcessing}
-								size="sm"
-							>
-								Reset Changes
-							</Button>
-							<Button
-								onClick={handleExecute}
-								disabled={isProcessing || !language}
-								size="sm"
-								className="px-6"
-							>
-								Run Code
-							</Button>
-						</div>
-					</DialogFooter>
+					<DialogFooter className="flex flex-col-reverse sm:flex-row gap-3 sm:items-center sm:justify-between p-4 bg-gray-50 dark:bg-gray-900 border-t rounded-b-lg">
+            <Button
+              variant="outline"
+              onClick={handleReset}
+              disabled={isProcessing}
+              className="w-full sm:w-auto"
+            >
+              Reset Changes
+            </Button>
+            <Button
+              onClick={handleExecute}
+              disabled={isProcessing || !language}
+              className="w-full sm:w-auto min-w-[100px]"
+            >
+              Run Code
+            </Button>
+          </DialogFooter>
 				</DialogContent>
 			</Dialog>
 		</div>
