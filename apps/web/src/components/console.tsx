@@ -2,8 +2,15 @@ import { cpp } from "@codemirror/lang-cpp";
 import { java } from "@codemirror/lang-java";
 import { python } from "@codemirror/lang-python";
 import { EditorView } from "@uiw/react-codemirror";
-import { Loader2, Pencil, RotateCcw, Terminal } from "lucide-react";
-import { AnimatePresence, motion } from "motion/react";
+import {
+	Eye,
+	EyeOff,
+	Loader2,
+	Pencil,
+	RotateCcw,
+	Terminal,
+} from "lucide-react";
+import { AnimatePresence, motion, useAnimationControls } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -13,6 +20,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "~/components/ui/dialog";
+import { Toggle } from "~/components/ui/toggle";
 import type { SupportedLanguage } from "~shared/constants";
 import { CodeEditorWrapper } from "./code-editor-wrapper";
 
@@ -33,11 +41,14 @@ export const Console = ({
 	isProcessing = false,
 	onExecute,
 }: ConsoleProps) => {
+	const controls = useAnimationControls();
+
 	const consoleRef = useRef<HTMLDivElement>(null);
 	const [lines, setLines] = useState<string[]>([]);
 	const [isTyping, setIsTyping] = useState(false);
 	const [isDialogOpen, setIsDialogOpen] = useState(false);
 	const [editableCode, setEditableCode] = useState(ocrResult || "");
+	const [isFileVisible, setIsFileVisible] = useState(false);
 
 	useEffect(() => {
 		const newLines = message.trim()
@@ -116,7 +127,7 @@ export const Console = ({
 				initial={{ opacity: 0, y: 20 }}
 				animate={{ opacity: 1, y: 0 }}
 				transition={{ duration: 0.3 }}
-				className="flex h-full w-full flex-col overflow-hidden rounded-lg border bg-zinc-900 font-mono text-zinc-100 shadow-xl"
+				className="flex h-full w-full flex-col overflow-hidden rounded-lg border bg-zinc-900 font-mono text-zinc-100"
 			>
 				<motion.div
 					className="flex items-center justify-between border-b border-border/50 bg-zinc-800/50 px-4 py-2"
@@ -205,30 +216,30 @@ export const Console = ({
 			<Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
 				<DialogContent className="max-w-[90vw] lg:max-w-[85vw] p-0">
 					<DialogHeader className="border-b px-4 py-3">
-						<div className="flex items-center justify-between">
-							<div className="flex items-center gap-3">
-								<DialogTitle className="text-base font-medium">
-									Code Editor
-								</DialogTitle>
-							</div>
+						<div>
+							<DialogTitle className="text-base font-medium">
+								Code Editor
+							</DialogTitle>
 						</div>
 					</DialogHeader>
 
 					<div className="flex flex-col gap-4 p-4 h-[70vh] lg:flex-row">
-						<div className="flex-1 flex flex-col min-h-[300px] lg:min-h-0">
-							<h3 className="text-sm font-medium mb-2 text-muted-foreground">
-								Original File
-							</h3>
-							<div className="flex-1 overflow-hidden rounded-lg border">
-								{renderOriginalFile()}
+						{isFileVisible && (
+							<div className="flex-1 flex flex-col min-h-[300px] lg:min-h-0">
+								<h3 className="text-sm font-medium mb-2 text-muted-foreground">
+									Original File
+								</h3>
+								<div className="flex-1 overflow-hidden rounded-lg border">
+									{renderOriginalFile()}
+								</div>
 							</div>
-						</div>
+						)}
 
 						<div className="flex-1 flex flex-col min-h-[300px] lg:min-h-0">
 							<h3 className="text-sm font-medium mb-2 text-muted-foreground">
 								Detected Code
 							</h3>
-							<div className="flex-1 overflow-hidden rounded-lg border">
+							<div className="flex-1 overflow-hidden rounded-lg border h-full">
 								<CodeEditorWrapper
 									value={editableCode}
 									language={language || ""}
@@ -241,15 +252,57 @@ export const Console = ({
 					</div>
 
 					<div className="flex items-center justify-between border-t bg-muted/30 p-4">
-						<Button
-							variant="outline"
-							onClick={handleReset}
-							disabled={isProcessing}
-							className="gap-2"
-						>
-							<RotateCcw size={14} />
-							Reset Changes
-						</Button>
+						<div className="flex items-center gap-2">
+							{/* Toggle Button */}
+							<Toggle
+								variant="outline"
+								aria-label="Toggle preview"
+								pressed={isFileVisible}
+								onPressedChange={setIsFileVisible}
+								className="gap-2"
+							>
+								<Eye className={isFileVisible ? "h-4 w-4" : "hidden"} />
+								<EyeOff className={!isFileVisible ? "h-4 w-4" : "hidden"} />
+								<span className="text-sm">Preview</span>
+							</Toggle>
+
+							{/* Reset Button */}
+							<Button
+								variant="outline"
+								onClick={() => {
+									// Execute reset immediately
+									handleReset();
+									// Play the animation separately
+									controls
+										.start({
+											rotate: 360,
+											transition: {
+												duration: 1,
+												ease: [0.4, 0, 0.2, 1],
+											},
+										})
+										.then(() => {
+											controls.set({ rotate: 0 });
+										});
+								}}
+								disabled={isProcessing}
+								className="gap-2"
+							>
+								<motion.div
+									animate={controls}
+									whileHover={{ rotate: 45 }}
+									transition={{
+										duration: 0.3,
+										ease: "easeInOut",
+									}}
+								>
+									<RotateCcw size={14} />
+								</motion.div>
+								Reset Changes
+							</Button>
+						</div>
+
+						{/* Run Button */}
 						<Button
 							onClick={handleExecute}
 							disabled={isProcessing || !language}
