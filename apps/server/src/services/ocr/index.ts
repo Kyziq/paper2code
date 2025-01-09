@@ -18,61 +18,11 @@ interface TestData {
 }
 
 // Simple base64 encoded test images - these are just basic SVGs
-// You can replace these with actual handwritten code image base64 strings
 const TEST_IMAGES = {
-	cpp: `data:image/svg+xml;base64,${Buffer.from(`
-    <svg width="400" height="200" xmlns="http://www.w3.org/2000/svg">
-      <rect width="100%" height="100%" fill="white"/>
-      <text x="10" y="30" font-family="monospace" font-size="14">
-        #include &lt;iostream&gt;
-      </text>
-      <text x="10" y="50" font-family="monospace" font-size="14">
-        using namespace std;
-      </text>
-      <text x="10" y="80" font-family="monospace" font-size="14">
-        int main() {
-      </text>
-      <text x="30" y="100" font-family="monospace" font-size="14">
-        cout << "Hello World from C++";
-      </text>
-      <text x="10" y="120" font-family="monospace" font-size="14">
-        return 0;
-      </text>
-      <text x="10" y="140" font-family="monospace" font-size="14">
-        }
-      </text>
-    </svg>
-  `).toString("base64")}`,
-
-	java: `data:image/svg+xml;base64,${Buffer.from(`
-    <svg width="400" height="200" xmlns="http://www.w3.org/2000/svg">
-      <rect width="100%" height="100%" fill="white"/>
-      <text x="10" y="30" font-family="monospace" font-size="14">
-        public class Main {
-      </text>
-      <text x="30" y="60" font-family="monospace" font-size="14">
-        public static void main(String[] args) {
-      </text>
-      <text x="50" y="90" font-family="monospace" font-size="14">
-        System.out.println("Hello World from Java");
-      </text>
-      <text x="30" y="120" font-family="monospace" font-size="14">
-        }
-      </text>
-      <text x="10" y="150" font-family="monospace" font-size="14">
-        }
-      </text>
-    </svg>
-  `).toString("base64")}`,
-
-	python: `data:image/svg+xml;base64,${Buffer.from(`
-    <svg width="400" height="100" xmlns="http://www.w3.org/2000/svg">
-      <rect width="100%" height="100%" fill="white"/>
-      <text x="10" y="30" font-family="monospace" font-size="14">
-        print("Hello World from Python")
-      </text>
-    </svg>
-  `).toString("base64")}`,
+	cpp: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ3aGl0ZSIvPjx0ZXh0IHg9IjEwIiB5PSIzMCIgZm9udC1mYW1pbHk9Im1vbm9zcGFjZSIgZm9udC1zaXplPSIxNCI+I2luY2x1ZGUgJmx0O2lvc3RyZWFtJmd0OzwvdGV4dD48dGV4dCB4PSIxMCIgeT0iNTAiIGZvbnQtZmFtaWx5PSJtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTQiPnVzaW5nIG5hbWVzcGFjZSBzdGQ7PC90ZXh0Pjx0ZXh0IHg9IjEwIiB5PSI4MCIgZm9udC1mYW1pbHk9Im1vbm9zcGFjZSIgZm9udC1zaXplPSIxNCI+aW50IG1haW4oKSB7PC90ZXh0Pjx0ZXh0IHg9IjMwIiB5PSIxMDAiIGZvbnQtZmFtaWx5PSJtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTQiPmNvdXQgJmx0OyZsdDsgIkhlbGxvIFdvcmxkIGZyb20gQysrIjs8L3RleHQ+PHRleHQgeD0iMTAiIHk9IjEyMCIgZm9udC1mYW1pbHk9Im1vbm9zcGFjZSIgZm9udC1zaXplPSIxNCI+cmV0dXJuIDA7PC90ZXh0Pjx0ZXh0IHg9IjEwIiB5PSIxNDAiIGZvbnQtZmFtaWx5PSJtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTQiPn08L3RleHQ+PC9zdmc+",
+	java: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ3aGl0ZSIvPjx0ZXh0IHg9IjEwIiB5PSIzMCIgZm9udC1mYW1pbHk9Im1vbm9zcGFjZSIgZm9udC1zaXplPSIxNCI+cHVibGljIGNsYXNzIE1haW4gezwvdGV4dD48dGV4dCB4PSIzMCIgeT0iNjAiIGZvbnQtZmFtaWx5PSJtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTQiPnB1YmxpYyBzdGF0aWMgdm9pZCBtYWluKFN0cmluZ1tdIGFyZ3MpIHs8L3RleHQ+PHRleHQgeD0iNTAiIHk9IjkwIiBmb250LWZhbWlseT0ibW9ub3NwYWNlIiBmb250LXNpemU9IjE0Ij5TeXN0ZW0ub3V0LnByaW50bG4oIkhlbGxvIFdvcmxkIGZyb20gSmF2YSIpOzwvdGV4dD48dGV4dCB4PSIzMCIgeT0iMTIwIiBmb250LWZhbWlseT0ibW9ub3NwYWNlIiBmb250LXNpemU9IjE0Ij59PC90ZXh0Pjx0ZXh0IHg9IjEwIiB5PSIxNTAiIGZvbnQtZmFtaWx5PSJtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTQiPn08L3RleHQ+PC9zdmc+",
+	python:
+		"data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ3aGl0ZSIvPjx0ZXh0IHg9IjEwIiB5PSIzMCIgZm9udC1mYW1pbHk9Im1vbm9zcGFjZSIgZm9udC1zaXplPSIxNCI+cHJpbnQoIkhlbGxvIFdvcmxkIGZyb20gUHl0aG9uIik8L3RleHQ+PC9zdmc+",
 };
 
 const TEST_CODE: Record<SupportedLanguage, TestData> = {
