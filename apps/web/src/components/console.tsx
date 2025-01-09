@@ -1,7 +1,7 @@
 import { cpp } from "@codemirror/lang-cpp";
 import { java } from "@codemirror/lang-java";
 import { python } from "@codemirror/lang-python";
-import CodeMirror, { EditorView } from "@uiw/react-codemirror";
+import { EditorView } from "@uiw/react-codemirror";
 import { Loader2, Pencil, RotateCcw, Terminal } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
@@ -14,6 +14,7 @@ import {
 	DialogTitle,
 } from "~/components/ui/dialog";
 import type { SupportedLanguage } from "~shared/constants";
+import { CodeEditorWrapper } from "./code-editor-wrapper";
 
 interface ConsoleProps {
 	message: string;
@@ -228,40 +229,12 @@ export const Console = ({
 								Detected Code
 							</h3>
 							<div className="flex-1 overflow-hidden rounded-lg border">
-								<CodeMirror
+								<CodeEditorWrapper
 									value={editableCode}
-									height="100%"
-									theme="dark"
+									language={language || ""}
+									onChange={(value) => setEditableCode(value)}
 									extensions={extensions}
-									onChange={setEditableCode}
-									className="h-full overflow-hidden font-caskaydiaCoveNerd text-sm"
-									editable={!isProcessing}
-									basicSetup={{
-										lineNumbers: true,
-										highlightActiveLineGutter: true,
-										highlightSpecialChars: true,
-										history: true,
-										foldGutter: true,
-										drawSelection: true,
-										dropCursor: true,
-										allowMultipleSelections: true,
-										indentOnInput: true,
-										syntaxHighlighting: true,
-										bracketMatching: true,
-										closeBrackets: true,
-										autocompletion: true,
-										rectangularSelection: true,
-										crosshairCursor: true,
-										highlightActiveLine: true,
-										highlightSelectionMatches: true,
-										closeBracketsKeymap: true,
-										defaultKeymap: true,
-										searchKeymap: true,
-										historyKeymap: true,
-										foldKeymap: true,
-										completionKeymap: true,
-										lintKeymap: true,
-									}}
+									isProcessing={isProcessing}
 								/>
 							</div>
 						</div>
