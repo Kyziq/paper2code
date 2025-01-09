@@ -1,4 +1,5 @@
-import CodeMirror, { type Extension } from "@uiw/react-codemirror";
+import type { Extension } from "@codemirror/state";
+import CodeMirror from "@uiw/react-codemirror";
 import { Sparkles } from "lucide-react";
 import { useState } from "react";
 import { Button } from "./ui/button";
@@ -17,12 +18,12 @@ interface CodeEditorWrapperProps {
 	isProcessing?: boolean;
 }
 
-export function CodeEditorWrapper({
+export const CodeEditorWrapper = ({
 	value,
 	onChange,
 	extensions,
 	isProcessing = false,
-}: CodeEditorWrapperProps) {
+}: CodeEditorWrapperProps) => {
 	const [isAIProcessing, setIsAIProcessing] = useState(false);
 
 	const handleAIAssist = async () => {
@@ -42,11 +43,11 @@ export function CodeEditorWrapper({
 	};
 
 	return (
-		<div className="relative">
-			{/* Code Editor */}
+		<div className="relative h-full w-full">
 			<CodeMirror
 				value={value}
-				height="100%"
+				height="100vh"
+				width="100%"
 				theme="dark"
 				extensions={extensions}
 				onChange={onChange}
@@ -80,7 +81,6 @@ export function CodeEditorWrapper({
 				}}
 			/>
 
-			{/* AI Assistant Button - Top Right Corner */}
 			<div className="absolute top-2 right-2">
 				<TooltipProvider>
 					<Tooltip>
@@ -93,7 +93,7 @@ export function CodeEditorWrapper({
 								disabled={isProcessing || isAIProcessing}
 							>
 								<Sparkles
-									className={`h-4 w-4 ${!isAIProcessing && "animate-pulse"}`}
+									className={`h-4 w-4 text-purple-100 ${!isAIProcessing && "animate-[pulse_1.5s_ease-in-out_infinite]"}`}
 								/>
 								{isAIProcessing ? (
 									<>
@@ -101,7 +101,7 @@ export function CodeEditorWrapper({
 										<span>Processing...</span>
 									</>
 								) : (
-									"AI Assist"
+									"AI Enhance"
 								)}
 							</Button>
 						</TooltipTrigger>
@@ -113,4 +113,4 @@ export function CodeEditorWrapper({
 			</div>
 		</div>
 	);
-}
+};
