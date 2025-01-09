@@ -49,7 +49,7 @@ export const ocrRoute = new Elysia().post(
 		// Process the file through OCR
 		try {
 			logger.info(`Processing ${file.type} file: ${file.name}`);
-			const code = await processOCR(file, language);
+			const { code, fileUrl } = await processOCR(file, language);
 			logger.ocr(`OCR completed for ${file.name}`);
 
 			return {
@@ -57,18 +57,13 @@ export const ocrRoute = new Elysia().post(
 				data: {
 					code,
 					language,
+					fileUrl,
 				},
 			};
 		} catch (error) {
 			logger.error(`OCR processing failed: ${(error as Error).message}`);
 			set.status = 500;
-			return {
-				message: `Error during OCR processing: ${(error as Error).message}`,
-				data: {
-					code: "",
-					language,
-				},
-			};
+			throw error;
 		}
 	},
 	{
@@ -86,6 +81,7 @@ export const ocrRoute = new Elysia().post(
 				t.Object({
 					code: t.String(),
 					language: t.String(),
+					fileUrl: t.String(),
 				}),
 			),
 		}),

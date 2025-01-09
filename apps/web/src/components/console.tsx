@@ -2,16 +2,14 @@ import { cpp } from "@codemirror/lang-cpp";
 import { java } from "@codemirror/lang-java";
 import { python } from "@codemirror/lang-python";
 import CodeMirror, { EditorView } from "@uiw/react-codemirror";
-import { Pencil, Terminal } from "lucide-react";
+import { Loader2, Pencil, RotateCcw, Terminal } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {
 	Dialog,
 	DialogContent,
-	DialogFooter,
 	DialogHeader,
 	DialogTitle,
 } from "~/components/ui/dialog";
@@ -20,19 +18,19 @@ import type { SupportedLanguage } from "~shared/constants";
 interface ConsoleProps {
 	message: string;
 	ocrResult?: string;
+	fileUrl?: string;
 	language?: SupportedLanguage | null;
 	isProcessing?: boolean;
 	onExecute?: (code: string) => void;
-	showEditButton?: boolean;
 }
 
 export const Console = ({
 	message,
 	ocrResult,
+	fileUrl,
 	language,
 	isProcessing = false,
 	onExecute,
-	showEditButton = false,
 }: ConsoleProps) => {
 	const consoleRef = useRef<HTMLDivElement>(null);
 	const [lines, setLines] = useState<string[]>([]);
@@ -43,7 +41,7 @@ export const Console = ({
 	useEffect(() => {
 		const newLines = message.trim()
 			? message.split("\n")
-			: ["Your output will appear here."];
+			: ["No output yet. Click the edit button to modify and run the code."];
 		setIsTyping(true);
 		setLines(newLines);
 
@@ -74,71 +72,98 @@ export const Console = ({
 
 	const handleReset = () => {
 		setEditableCode(ocrResult || "");
-		toast.info("Code reset to original OCR result");
 	};
 
 	const extensions = [
-		// Choose language extension based on the selected language
-		...(() => {
-			switch (language) {
-				case "cpp":
-					return [cpp()];
-				case "python":
-					return [python()];
-				default:
-					return [java()];
-			}
-		})(),
-		// Enable line wrapping
+		language === "cpp" ? cpp() : language === "python" ? python() : java(),
 		EditorView.lineWrapping,
 	];
 
+	const renderOriginalFile = () => {
+		if (!fileUrl) {
+			return (
+				<div className="flex h-full items-center justify-center bg-muted/30 text-muted-foreground">
+					<p className="text-sm">No file available</p>
+				</div>
+			);
+		}
+
+		if (fileUrl.toLowerCase().endsWith(".pdf")) {
+			return (
+				<iframe
+					src={fileUrl}
+					className="h-full w-full rounded border"
+					title="Original PDF"
+				/>
+			);
+		}
+
+		return (
+			<div className="flex h-full items-center justify-center rounded bg-muted/30">
+				<img
+					src={fileUrl}
+					alt="Original file"
+					className="max-h-full max-w-full rounded object-contain"
+				/>
+			</div>
+		);
+	};
+
 	return (
-		<div className="relative w-full h-full group">
+		<div className="relative h-full w-full">
 			<motion.div
 				initial={{ opacity: 0, y: 20 }}
 				animate={{ opacity: 1, y: 0 }}
 				transition={{ duration: 0.3 }}
-				className="w-full h-full flex flex-col overflow-hidden rounded-lg bg-zinc-900 font-mono text-zinc-100 shadow-xl"
+				className="flex h-full w-full flex-col overflow-hidden rounded-lg border bg-zinc-900 font-mono text-zinc-100 shadow-xl"
 			>
 				<motion.div
-					className="flex items-center justify-between bg-zinc-800 p-3"
+					className="flex items-center justify-between border-b border-border/50 bg-zinc-800/50 px-4 py-2"
 					initial={{ opacity: 0 }}
 					animate={{ opacity: 1 }}
 					transition={{ delay: 0.2 }}
 				>
-					<div className="flex items-center space-x-2">
-						<Terminal size={18} />
-						<span className="font-caskaydiaCoveNerd text-sm font-semibold">
-							Console Output
-						</span>
+					<div className="flex items-center gap-3">
+						<div className="flex items-center gap-2">
+							<Terminal size={16} />
+							<span className="font-caskaydiaCoveNerd text-sm font-medium">
+								Console Output
+							</span>
+						</div>
+						{language && (
+							<Badge
+								variant={language}
+								showIcon={true}
+								className="flex items-center gap-1.5 px-2 py-0.5 text-xs"
+							>
+								{language.toUpperCase()}
+							</Badge>
+						)}
 					</div>
 
-					<div className="flex items-center space-x-2">
-						{showEditButton && (
-							<motion.div
-								initial={{ opacity: 0, scale: 0.9 }}
-								animate={{ opacity: 1, scale: 1 }}
-								transition={{ delay: 0.5 }}
-							>
-								<Button
-									size="icon"
-									variant="ghost"
-									className="h-8 w-8 rounded-full bg-zinc-700/50 text-zinc-100 hover:bg-zinc-700 hover:text-zinc-50 transition-colors"
-									onClick={() => setIsDialogOpen(true)}
-									disabled={isProcessing}
-									title="Edit Code"
-								>
-									<Pencil className="h-4 w-4" />
-								</Button>
-							</motion.div>
+					<div className="flex items-center gap-2">
+						{isProcessing && (
+							<div className="flex items-center gap-2 text-xs text-muted-foreground">
+								<Loader2 size={14} className="animate-spin" />
+								Processing...
+							</div>
 						)}
+
+						<Button
+							size="icon"
+							variant="ghost"
+							className="h-8 w-8 rounded-full bg-zinc-700/50 hover:bg-zinc-700"
+							onClick={() => setIsDialogOpen(true)}
+							disabled={isProcessing}
+						>
+							<Pencil className="h-4 w-4" />
+						</Button>
 					</div>
 				</motion.div>
 
 				<div
 					ref={consoleRef}
-					className="flex-1 min-h-0 overflow-y-auto bg-zinc-950 p-4"
+					className="flex-1 min-h-0 overflow-y-auto bg-zinc-950 p-4 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-zinc-700"
 				>
 					<AnimatePresence mode="wait">
 						{lines.map((line, index) => (
@@ -147,38 +172,25 @@ export const Console = ({
 								initial={{ opacity: 0, x: -10 }}
 								animate={{ opacity: 1, x: 0 }}
 								exit={{ opacity: 0, x: 10 }}
-								transition={{
-									duration: 0.2,
-									delay: index * 0.05,
-									ease: [0.32, 0.72, 0, 1],
-								}}
-								className="mb-1 flex"
+								transition={{ duration: 0.2, delay: index * 0.05 }}
+								className="mb-1 flex items-start"
 							>
-								<motion.span
-									className="text-green-400 mr-2"
-									initial={{ opacity: 0 }}
-									animate={{ opacity: 1 }}
-									transition={{ delay: index * 0.05 + 0.1 }}
-								>
-									&gt;
-								</motion.span>
-								<motion.span
+								<span className="mr-2 font-bold text-emerald-400">&gt;</span>
+								<span
 									className={`font-caskaydiaCoveNerd ${
-										message.trim() ? "text-zinc-300" : "italic text-zinc-500"
+										message.trim() ? "text-zinc-200" : "text-zinc-500"
 									}`}
 								>
 									{line || " "}
-								</motion.span>
+								</span>
 								{isTyping && index === lines.length - 1 && (
 									<motion.span
-										initial={{ opacity: 0 }}
 										animate={{ opacity: [0, 1, 0] }}
 										transition={{
 											repeat: Number.POSITIVE_INFINITY,
 											duration: 1,
-											ease: "linear",
 										}}
-										className="ml-1 text-zinc-300"
+										className="ml-1 text-primary"
 									>
 										▋
 									</motion.span>
@@ -190,88 +202,94 @@ export const Console = ({
 			</motion.div>
 
 			<Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-				<DialogContent className="max-w-3xl sm:max-h-[85vh] p-0">
-					<DialogHeader className="px-6 pt-6 pb-4 border-b">
-						<div className="flex items-center gap-3 mb-1">
-							<DialogTitle className="text-lg font-semibold">
-								Code Editor
-							</DialogTitle>
-							{ language && (
-									<Badge
-										variant={language}
-										showIcon={true}
-										className="px-2 py-0.5 text-xs font-medium"
-									>
-										{language?.toUpperCase()}
-										</Badge>
-								)}
-							{/* <Badge
-								variant="secondary"
-								className="px-2 py-0.5 text-xs font-medium"
-							>
-								{language?.toUpperCase() ?? "No Language"}
-							</Badge> */}
+				<DialogContent className="max-w-[90vw] lg:max-w-[85vw] p-0">
+					<DialogHeader className="border-b px-4 py-3">
+						<div className="flex items-center justify-between">
+							<div className="flex items-center gap-3">
+								<DialogTitle className="text-base font-medium">
+									Code Editor
+								</DialogTitle>
+							</div>
 						</div>
-						<p className="text-sm text-muted-foreground">
-							Review and edit the detected code before execution
-						</p>
 					</DialogHeader>
 
-					<div className="flex-1 px-6 py-4">
-						<CodeMirror
-							value={editableCode}
-							height="400px"
-							theme="dark"
-							extensions={extensions}
-							onChange={(value) => setEditableCode(value)}
-							className="font-caskaydiaCoveNerd text-sm"
-							editable={!isProcessing}
-							basicSetup={{
-								lineNumbers: true,
-								highlightActiveLineGutter: true,
-								highlightSpecialChars: true,
-								history: true,
-								foldGutter: true,
-								drawSelection: true,
-								dropCursor: true,
-								allowMultipleSelections: true,
-								indentOnInput: true,
-								syntaxHighlighting: true,
-								bracketMatching: true,
-								closeBrackets: true,
-								autocompletion: true,
-								rectangularSelection: true,
-								crosshairCursor: true,
-								highlightActiveLine: true,
-								highlightSelectionMatches: true,
-								closeBracketsKeymap: true,
-								defaultKeymap: true,
-								searchKeymap: true,
-								historyKeymap: true,
-								foldKeymap: true,
-								completionKeymap: true,
-								lintKeymap: true,
-							}}
-						/>
+					<div className="flex flex-col gap-4 p-4 h-[70vh] lg:flex-row">
+						<div className="flex-1 flex flex-col min-h-[300px] lg:min-h-0">
+							<h3 className="text-sm font-medium mb-2 text-muted-foreground">
+								Original File
+							</h3>
+							<div className="flex-1 overflow-hidden rounded-lg border">
+								{renderOriginalFile()}
+							</div>
+						</div>
+
+						<div className="flex-1 flex flex-col min-h-[300px] lg:min-h-0">
+							<h3 className="text-sm font-medium mb-2 text-muted-foreground">
+								Detected Code
+							</h3>
+							<div className="flex-1 overflow-hidden rounded-lg border">
+								<CodeMirror
+									value={editableCode}
+									height="100%"
+									theme="dark"
+									extensions={extensions}
+									onChange={setEditableCode}
+									className="h-full overflow-hidden font-caskaydiaCoveNerd text-sm"
+									editable={!isProcessing}
+									basicSetup={{
+										lineNumbers: true,
+										highlightActiveLineGutter: true,
+										highlightSpecialChars: true,
+										history: true,
+										foldGutter: true,
+										drawSelection: true,
+										dropCursor: true,
+										allowMultipleSelections: true,
+										indentOnInput: true,
+										syntaxHighlighting: true,
+										bracketMatching: true,
+										closeBrackets: true,
+										autocompletion: true,
+										rectangularSelection: true,
+										crosshairCursor: true,
+										highlightActiveLine: true,
+										highlightSelectionMatches: true,
+										closeBracketsKeymap: true,
+										defaultKeymap: true,
+										searchKeymap: true,
+										historyKeymap: true,
+										foldKeymap: true,
+										completionKeymap: true,
+										lintKeymap: true,
+									}}
+								/>
+							</div>
+						</div>
 					</div>
 
-					<DialogFooter className="flex flex-col-reverse sm:flex-row gap-3 sm:items-center sm:justify-between p-4 bg-gray-50 dark:bg-gray-900 border-t rounded-b-lg">
-            <Button
-              variant="outline"
-              onClick={handleReset}
-              disabled={isProcessing}
-              className="w-full sm:w-auto"
-            >
-              Reset Changes
-            </Button>
-            <Button
-              onClick={handleExecute}
-              disabled={isProcessing || !language}
-              className="w-full sm:w-auto min-w-[100px]"
-            >
-              Run Code
-            </Button>
-          </DialogFooter>
+					<div className="flex items-center justify-between border-t bg-muted/30 p-4">
+						<Button
+							variant="outline"
+							onClick={handleReset}
+							disabled={isProcessing}
+							className="gap-2"
+						>
+							<RotateCcw size={14} />
+							Reset Changes
+						</Button>
+						<Button
+							onClick={handleExecute}
+							disabled={isProcessing || !language}
+							className="min-w-[100px] gap-2"
+						>
+							{isProcessing ? (
+								<Loader2 size={14} className="animate-spin" />
+							) : (
+								<Terminal size={14} />
+							)}
+							Run Code
+						</Button>
+					</div>
 				</DialogContent>
 			</Dialog>
 		</div>

@@ -31,10 +31,12 @@ function Index() {
     language,
     consoleMessage,
     ocrResult,
+    fileUrl,
     setFile,
     setLanguage,
     setConsoleMessage,
     setOcrResult,
+    setFileUrl,
   } = useStore();
 
   const queryClient = useQueryClient();
@@ -46,6 +48,7 @@ function Index() {
       if (result.data) {
         setConsoleMessage(result.message);
         setOcrResult(result.data.code);
+        setFileUrl(result.data.fileUrl);
         toast.success("File uploaded successfully. Proceeding to execution...");
         setShowConsole(true);
 
@@ -145,6 +148,7 @@ function Index() {
                     <Console
                       message={getConsoleMessage()}
                       ocrResult={ocrResult}
+                      fileUrl={fileUrl}
                       language={language}
                       isProcessing={isProcessing}
                       onExecute={(code) => {
@@ -154,7 +158,6 @@ function Index() {
                         }
                         executeMutation.mutate({ code, language });
                       }}
-                      showEditButton={uploadMutation.isSuccess}
                     />
                   </motion.div>
                 </motion.div>
@@ -193,6 +196,7 @@ function Index() {
                       <Console
                         message={getConsoleMessage()}
                         ocrResult={ocrResult}
+                        fileUrl={fileUrl}
                         language={language}
                         isProcessing={isProcessing}
                         onExecute={(code) => {
@@ -202,7 +206,6 @@ function Index() {
                           }
                           executeMutation.mutate({ code, language });
                         }}
-                        showEditButton={uploadMutation.isSuccess}
                       />
                     </div>
                   </ResizablePanel>
