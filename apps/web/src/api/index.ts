@@ -4,6 +4,10 @@ import type {
 	FileUploadParams,
 	FileUploadResponse,
 } from "~shared/types";
+import type {
+	CodeEnhanceParams,
+	CodeEnhanceResponse,
+} from "~shared/types/enhance";
 
 export const uploadFile = async (
 	params: FileUploadParams,
@@ -42,5 +46,22 @@ export const executeCode = async (
 			throw new Error(error.message);
 		}
 		throw new Error("An unknown error occurred during code execution");
+	}
+};
+
+export const enhanceCode = async (
+	params: CodeEnhanceParams,
+): Promise<CodeEnhanceResponse> => {
+	try {
+		return await kyInstance
+			.post("enhance", {
+				json: params,
+			})
+			.json<CodeEnhanceResponse>();
+	} catch (error) {
+		if (error instanceof Error) {
+			throw new Error(error.message);
+		}
+		throw new Error("An unknown error occurred during code enhancement");
 	}
 };

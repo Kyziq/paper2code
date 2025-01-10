@@ -1,7 +1,9 @@
 import type { Extension } from "@codemirror/state";
+import { useMutation } from "@tanstack/react-query";
 import CodeMirror from "@uiw/react-codemirror";
 import { Sparkles } from "lucide-react";
-import { useState } from "react";
+import { toast } from "sonner";
+import { enhanceCode } from "~/api";
 import { Button } from "./ui/button";
 import {
 	Tooltip,
@@ -11,35 +13,40 @@ import {
 } from "./ui/tooltip";
 
 interface CodeEditorWrapperProps {
-	value: string;
-	language: string;
-	onChange: (value: string) => void;
-	extensions: Extension[];
-	isProcessing?: boolean;
+	value: string; // Current code value
+	language: string; // Programming language
+	onChange: (value: string) => void; // Value change handler
+	extensions: Extension[]; // CodeMirror extensions
+	isProcessing?: boolean; // External processing state
 }
 
 export const CodeEditorWrapper = ({
 	value,
 	onChange,
 	extensions,
+	language,
 	isProcessing = false,
 }: CodeEditorWrapperProps) => {
-	const [isAIProcessing, setIsAIProcessing] = useState(false);
+	const enhanceMutation = useMutation({
+		mutationFn: () => enhanceCode({ code: value, language }),
+		onSuccess: (response) => {
+			if (!response.data) {
+				toast.error("Error. No enhanced code received");
+				return;
+			}
 
-	const handleAIAssist = async () => {
-		setIsAIProcessing(true);
-		try {
-			// TODO: Implement actual AI service call
-			await new Promise((resolve) => setTimeout(resolve, 1500));
-
-			// Example response - replace with actual AI service integration
-			const aiSuggestions = `// AI improved code\n${value}`;
-			onChange(aiSuggestions);
-		} catch (error) {
+			const { enhancedCode } = response.data;
+			onChange(enhancedCode);
+			toast.success("Code enhanced successfully.");
+		},
+		onError: (error) => {
 			console.error("AI assistance error:", error);
-		} finally {
-			setIsAIProcessing(false);
-		}
+			toast.error("Failed to enhance code. Please try again.");
+		},
+	});
+
+	const handleAIAssist = () => {
+		enhanceMutation.mutate();
 	};
 
 	return (
@@ -52,7 +59,7 @@ export const CodeEditorWrapper = ({
 				extensions={extensions}
 				onChange={onChange}
 				className="h-full overflow-hidden font-caskaydiaCoveNerd text-sm"
-				editable={!isProcessing && !isAIProcessing}
+				editable={!isProcessing && !enhanceMutation.isPending}
 				basicSetup={{
 					lineNumbers: true,
 					highlightActiveLineGutter: true,
@@ -90,12 +97,12 @@ export const CodeEditorWrapper = ({
 								variant="secondary"
 								className="gap-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 border border-purple-400/30"
 								onClick={handleAIAssist}
-								disabled={isProcessing || isAIProcessing}
+								disabled={isProcessing || enhanceMutation.isPending}
 							>
 								<Sparkles
-									className={`h-4 w-4 text-purple-100 ${!isAIProcessing && "animate-[pulse_1.5s_ease-in-out_infinite]"}`}
+									className={`h-4 w-4 text-purple-100 ${!enhanceMutation.isPending && "animate-[pulse_1.5s_ease-in-out_infinite]"}`}
 								/>
-								{isAIProcessing ? (
+								{enhanceMutation.isPending ? (
 									<>
 										<div className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
 										<span>Processing...</span>
