@@ -17,7 +17,7 @@ export const pythonHandler: LanguageHandler = {
 		const commands = [
 			`mkdir -p ${uniqueDir}`, // Create temp directory
 			`echo ${encodedContent} | base64 -d > ${uniqueDir}/${sourceFile}`, // Write Python file
-			`python3 ${uniqueDir}/${sourceFile}`, // Execute the script
+			`cd ${uniqueDir} && python3 -u ${sourceFile} 2>&1 || true`, // Execute with error capturing
 			`rm -rf ${uniqueDir}`, // Clean up
 		];
 
