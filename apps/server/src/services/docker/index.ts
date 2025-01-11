@@ -12,32 +12,44 @@ interface ExecutionResult {
 	output: string;
 }
 
-const formatError = (errorText: string): string => {
+const formatError = (
+	errorText: string,
+	language: SupportedLanguage,
+): string => {
 	// Split into lines and filter out empty lines
 	const lines = errorText.split("\n").filter((line) => line.trim());
 
-	// Extract only the important error messages
+	if (language === "python") {
+		// For Python, keep traceback and error message
+		const relevantLines = lines.filter(
+			(line) =>
+				line.includes("Traceback") ||
+				line.includes("File") ||
+				line.includes("Error:") ||
+				line.includes("Exception:") ||
+				/^ {4}.*$/.test(line), // Keep indented code lines
+		);
+		return relevantLines.join("\n");
+	}
+	// For C++ and Java
 	const relevantLines = lines
 		.filter((line) => {
-			// Keep only error lines and their code context (lines with '|')
 			return (
 				line.includes(": error:") ||
 				line.includes("|") ||
 				line.includes("In function")
 			);
 		})
-		.filter((line) => !line.includes("In file included from")); // Remove header inclusion traces
+		.filter((line) => !line.includes("In file included from"));
 
-	// Format the error messages
-	const formattedLines = relevantLines.map((line) => {
-		// Clean up the line
-		return line
-			.replace(/^[^:]+:/, "") // Remove file name prefix
-			.replace(/\/tmp\/temp_[^/]+\//, "") // Remove temp directory paths
-			.trim();
-	});
-
-	return formattedLines.join("\n");
+	return relevantLines
+		.map((line) => {
+			return line
+				.replace(/^[^:]+:/, "")
+				.replace(/\/tmp\/temp_[^/]+\//, "")
+				.trim();
+		})
+		.join("\n");
 };
 
 const buildDockerExecCommand = (serviceName: string, command: string) => {
@@ -74,7 +86,7 @@ export const runContainer = async (
 
 		// 4. Check for errors (stderr)
 		if (stderr) {
-			const formattedError = formatError(stderr);
+			const formattedError = formatError(stderr, language);
 			logger.error(`Execution failed [ID: ${executionId}]:\n${formattedError}`);
 			return {
 				success: false,
