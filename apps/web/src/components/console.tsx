@@ -44,23 +44,54 @@ export const Console = ({
 	const controls = useAnimationControls();
 
 	const consoleRef = useRef<HTMLDivElement>(null);
-	const [lines, setLines] = useState<string[]>([]);
+	const [output, setOutput] = useState<{ text: string; isError: boolean }[]>(
+		[],
+	);
 	const [isTyping, setIsTyping] = useState(false);
 	const [isDialogOpen, setIsDialogOpen] = useState(false);
 	const [editableCode, setEditableCode] = useState(ocrResult || "");
 	const [isFileVisible, setIsFileVisible] = useState(false);
 
 	useEffect(() => {
-		const newLines = !message.trim()
-			? ["No output yet. Click the edit button to modify and run the code."]
-			: message
-					.split("\n")
-					.map((line) => line.trim())
-					.filter((line) => line.length > 0)
-					// Handle lines with | to preserve indentation for error pointers
-					.map((line) => (line.startsWith("|") ? `  ${line}` : line));
+		if (!message.trim()) {
+			setOutput([
+				{
+					text: "No output yet. Click the edit button to modify and run the code.",
+					isError: false,
+				},
+			]);
+			return;
+		}
 
-		setLines(newLines);
+		// Check if the message contains error indicators
+		const hasError =
+			message.includes("error:") ||
+			message.includes("Error:") ||
+			message.includes("Traceback") ||
+			message.includes("SyntaxError:") ||
+			message.includes("NameError:") ||
+			message.includes("TypeError:");
+
+		if (hasError) {
+			// Treat the entire message as one error block
+			setOutput([
+				{
+					text: message,
+					isError: true,
+				},
+			]);
+		} else {
+			// Split normal output into lines
+			const lines = message
+				.split("\n")
+				.filter((line) => line.trim())
+				.map((line) => ({
+					text: line,
+					isError: false,
+				}));
+			setOutput(lines);
+		}
+
 		setIsTyping(true);
 
 		if (consoleRef.current) {
@@ -71,11 +102,11 @@ export const Console = ({
 			() => {
 				setIsTyping(false);
 			},
-			newLines.length * 50 + 300,
+			output.length * 50 + 300,
 		);
 
 		return () => clearTimeout(timer);
-	}, [message]);
+	}, [message, output.length]);
 
 	useEffect(() => {
 		setEditableCode(ocrResult || "");
@@ -184,24 +215,32 @@ export const Console = ({
 					className="flex-1 min-h-0 overflow-y-auto bg-zinc-950 p-4 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-zinc-700"
 				>
 					<AnimatePresence mode="wait">
-						{lines.map((line, index) => (
+						{output.map((item, index) => (
 							<motion.div
-								key={`${index}-${line}`}
+								key={`${index}-${item.text}`}
 								initial={{ opacity: 0, x: -10 }}
 								animate={{ opacity: 1, x: 0 }}
 								exit={{ opacity: 0, x: 10 }}
 								transition={{ duration: 0.2, delay: index * 0.05 }}
-								className="mb-1 flex items-start"
 							>
-								<span className="mr-2 font-bold text-emerald-400">&gt;</span>
-								<span
-									className={`font-caskaydiaCoveNerd ${
-										message.trim() ? "text-zinc-200" : "text-zinc-500"
-									}`}
-								>
-									{line || " "}
-								</span>
-								{isTyping && index === lines.length - 1 && (
+								{item.isError ? (
+									// Error message block
+									<pre className="font-caskaydiaCoveNerd text-red-400 whitespace-pre-wrap break-words">
+										{item.text}
+									</pre>
+								) : (
+									// Normal output line
+									<div className="flex items-start mb-1">
+										<span className="mr-2 font-bold text-emerald-400">
+											&gt;
+										</span>
+										<span className="font-caskaydiaCoveNerd text-zinc-200">
+											{item.text}
+										</span>
+									</div>
+								)}
+
+								{isTyping && index === output.length - 1 && (
 									<motion.span
 										animate={{ opacity: [0, 1, 0] }}
 										transition={{
