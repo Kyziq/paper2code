@@ -7,12 +7,37 @@ import { getLanguageHandler } from "./handlers";
 
 const execPromise = util.promisify(exec);
 
+interface ExecutionResult {
+	success: boolean;
+	output: string;
+}
+
 const formatError = (errorText: string): string => {
-	return errorText
-		.split("\n")
-		.filter((line) => line.trim()) // Remove empty lines
-		.map((line) => line.replace(/\/tmp\/temp_[^/]+\//, "")) // Remove temp paths
-		.join("\n");
+	// Split into lines and filter out empty lines
+	const lines = errorText.split("\n").filter((line) => line.trim());
+
+	// Extract only the important error messages
+	const relevantLines = lines
+		.filter((line) => {
+			// Keep only error lines and their code context (lines with '|')
+			return (
+				line.includes(": error:") ||
+				line.includes("|") ||
+				line.includes("In function")
+			);
+		})
+		.filter((line) => !line.includes("In file included from")); // Remove header inclusion traces
+
+	// Format the error messages
+	const formattedLines = relevantLines.map((line) => {
+		// Clean up the line
+		return line
+			.replace(/^[^:]+:/, "") // Remove file name prefix
+			.replace(/\/tmp\/temp_[^/]+\//, "") // Remove temp directory paths
+			.trim();
+	});
+
+	return formattedLines.join("\n");
 };
 
 const buildDockerExecCommand = (serviceName: string, command: string) => {
@@ -25,7 +50,7 @@ const buildDockerExecCommand = (serviceName: string, command: string) => {
 export const runContainer = async (
 	code: string,
 	language: SupportedLanguage,
-): Promise<string> => {
+): Promise<ExecutionResult> => {
 	const executionId = `${language}_${Date.now()}`;
 	const handler = getLanguageHandler(language);
 
@@ -49,14 +74,24 @@ export const runContainer = async (
 
 		// 4. Check for errors (stderr)
 		if (stderr) {
-			const cleanError = formatError(stderr);
-			throw new Error(cleanError);
+			const formattedError = formatError(stderr);
+			logger.error(`Execution failed [ID: ${executionId}]:\n${formattedError}`);
+			return {
+				success: false,
+				output: formattedError,
+			};
 		}
 
 		// 5. Return successful output
-		logger.docker(`Code executed successfully [ID: ${executionId}]`);
-
-		return stdout.trim() || "Program executed successfully with no output.";
+		const output =
+			stdout.trim() || "Program executed successfully with no output.";
+		logger.success(
+			`Code executed successfully [ID: ${executionId}]:\n${output}`,
+		);
+		return {
+			success: true,
+			output,
+		};
 	} catch (error) {
 		// 6. Handle any errors
 		const errorMessage = error instanceof Error ? error.message : String(error);

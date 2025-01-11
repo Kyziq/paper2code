@@ -18,11 +18,13 @@ export const executeRoute = new Elysia().post(
 			);
 		}
 
-		const output = await runContainer(code, language as SupportedLanguage);
-		logger.success(`Execution output:\n${output}`);
+		const result = await runContainer(code, language as SupportedLanguage);
+
 		return {
-			message: "Code execution successful",
-			data: { output },
+			message: result.success
+				? "Code execution successful"
+				: "Code execution failed",
+			data: { output: result.output },
 		};
 	},
 	{

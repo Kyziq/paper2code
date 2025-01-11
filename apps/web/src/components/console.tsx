@@ -51,11 +51,17 @@ export const Console = ({
 	const [isFileVisible, setIsFileVisible] = useState(false);
 
 	useEffect(() => {
-		const newLines = message.trim()
-			? message.split("\n")
-			: ["No output yet. Click the edit button to modify and run the code."];
-		setIsTyping(true);
+		const newLines = !message.trim()
+			? ["No output yet. Click the edit button to modify and run the code."]
+			: message
+					.split("\n")
+					.map((line) => line.trim())
+					.filter((line) => line.length > 0)
+					// Handle lines with | to preserve indentation for error pointers
+					.map((line) => (line.startsWith("|") ? `  ${line}` : line));
+
 		setLines(newLines);
+		setIsTyping(true);
 
 		if (consoleRef.current) {
 			consoleRef.current.scrollTop = consoleRef.current.scrollHeight;
