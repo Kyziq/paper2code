@@ -21,6 +21,7 @@ services:
     volumes:
       - ./apps/server/.env:/app/apps/server/.env
       - ./credentials:/app/credentials
+      - /var/run/docker.sock:/var/run/docker.sock  # Share Docker socket
     depends_on:
       - cpp_runner
       - java_runner
