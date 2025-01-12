@@ -97,9 +97,8 @@ export const runContainer = async (
 		// 5. Return successful output
 		const output =
 			stdout.trim() || "Program executed successfully with no output.";
-		logger.success(
-			`Code executed successfully [ID: ${executionId}]:\n${output}`,
-		);
+		logger.success(`Code executed successfully [ID: ${executionId}]`);
+		logger.success(`Output:\n${output}`);
 		return {
 			success: true,
 			output,
