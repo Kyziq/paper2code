@@ -1,0 +1,52 @@
+version: '3.8'
+name: paper2code
+
+services:
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    env_file:
+      - ./apps/web/.env.${NODE_ENV:-prod}
+    depends_on:
+      - server
+
+  server:
+    build:
+      context: ./apps/server
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./apps/server/.env:/app/.env
+      - ./credentials:/app/credentials
+    depends_on:
+      - cpp_runner
+      - java_runner
+      - python_runner
+
+  cpp_runner:
+    build:
+      context: ./apps/server
+      dockerfile: Dockerfile.cpp
+    container_name: cpp_script_runner
+    init: true
+    restart: unless-stopped
+
+  java_runner:
+    build:
+      context: ./apps/server
+      dockerfile: Dockerfile.java
+    container_name: java_script_runner
+    init: true
+    restart: unless-stopped
+
+  python_runner:
+    build:
+      context: ./apps/server
+      dockerfile: Dockerfile.python
+    container_name: python_script_runner
+    init: true
+    restart: unless-stopped
