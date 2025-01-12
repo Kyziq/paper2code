@@ -2,18 +2,14 @@ FROM oven/bun:latest
 
 WORKDIR /app
 
-# Copy package files
-COPY package.json .
-COPY bun.lockb .
+# Copy source code which includes the shared packages
+COPY . .
 
 # Install dependencies
 RUN bun install
 
-# Copy source code
-COPY . .
-
 # Expose the port
 EXPOSE 3000
 
-# Start the server
+# Start the server directly with Bun
 CMD ["bun", "run", "dev"]

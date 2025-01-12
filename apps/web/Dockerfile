@@ -1,19 +1,15 @@
-FROM node:20-slim
+FROM oven/bun:latest
 
 WORKDIR /app
 
-# Copy package files
-COPY package.json .
-COPY package-lock.json .
+# Copy source code which includes the shared packages
+COPY . .
 
 # Install dependencies
-RUN npm ci
-
-# Copy source code
-COPY . .
+RUN bun install
 
 # Expose the port
 EXPOSE 5173
 
-# Start the development server with host flag
-CMD ["npm", "run", "dev", "--", "--host"]
+# Start the dev server (Vite) with host flag
+CMD ["bun", "run", "dev", "--", "--host"]
