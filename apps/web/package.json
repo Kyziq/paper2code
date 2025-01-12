@@ -25,6 +25,7 @@
 		"clsx": "^2.1.1",
 		"ky": "^1.7.4",
 		"lucide-react": "^0.469.0",
+		"motion": "^11.17.0",
 		"react-dropzone": "^14.3.5",
 		"react-resizable-panels": "^2.1.7",
 		"sonner": "^1.7.1",
