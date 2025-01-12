@@ -4,7 +4,7 @@ import { enhanceRoute, executeRoute, ocrRoute } from "~/routes";
 import { ApiError } from "~/utils/errors";
 import { logger } from "~/utils/logger";
 
-const app = new Elysia()
+export const app = new Elysia()
 	.use(cors())
 	.use(ocrRoute)
 	.use(executeRoute)

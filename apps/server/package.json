@@ -4,7 +4,8 @@
 	"scripts": {
 		"predev": "docker compose up -d",
 		"dev": "bun run --watch src/index.ts",
-		"postdev": "docker compose down -v --remove-orphans"
+		"postdev": "docker compose down -v --remove-orphans",
+		"test": "bun test --preload ./tests/setup.ts"
 	},
 	"dependencies": {
 		"@elysiajs/cors": "^1.1.1",
