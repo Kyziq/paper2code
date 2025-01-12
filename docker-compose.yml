@@ -7,6 +7,8 @@ services:
       dockerfile: Dockerfile
     ports:
       - "5173:5173"
+    volumes:
+      - ./packages/shared:/app/packages/shared
     env_file:
       - ./apps/web/.env.${NODE_ENV:-prod}
     depends_on:
@@ -21,6 +23,7 @@ services:
     volumes:
       - ./apps/server/.env:/app/.env
       - ./credentials:/app/credentials
+      - ./packages/shared:/app/packages/shared
     depends_on:
       - cpp_runner
       - java_runner
