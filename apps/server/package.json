@@ -2,7 +2,6 @@
 	"name": "server",
 	"version": "1.0.0",
 	"scripts": {
-		"predev": "docker compose up -d",
 		"dev": "bun run --watch src/index.ts",
 		"postdev": "docker compose down -v --remove-orphans",
 		"test": "bun test --preload ./tests/setup.ts"
