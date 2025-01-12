@@ -2,15 +2,11 @@ FROM oven/bun:latest
 
 WORKDIR /app
 
-# First, copy package files and shared packages
-COPY package.json .
-COPY ../../packages/shared/ ./packages/shared/
+# Copy the source code (only include files within /apps/web)
+COPY . .
 
 # Install dependencies
 RUN bun install
-
-# Then copy the rest of the source code
-COPY . .
 
 # Expose the port
 EXPOSE 5173

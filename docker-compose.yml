@@ -1,14 +1,13 @@
+version: '3.8'
 name: paper2code
 
 services:
   web:
     build:
-      context: ./apps/web
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: apps/web/Dockerfile
     ports:
       - "5173:5173"
-    volumes:
-      - ./packages/shared:/app/packages/shared
     env_file:
       - ./apps/web/.env.${NODE_ENV:-prod}
     depends_on:
@@ -16,14 +15,13 @@ services:
 
   server:
     build:
-      context: ./apps/server
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: apps/server/Dockerfile
     ports:
       - "3000:3000"
     volumes:
-      - ./apps/server/.env:/app/.env
+      - ./apps/server/.env:/app/apps/server/.env
       - ./credentials:/app/credentials
-      - ./packages/shared:/app/packages/shared
     depends_on:
       - cpp_runner
       - java_runner
