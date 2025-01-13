@@ -1,4 +1,4 @@
-import { FileText, Image, Upload, X } from "lucide-react";
+import { FileText, Image, Info, Upload, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import type { DropzoneInputProps, DropzoneRootProps } from "react-dropzone";
 import { Button } from "~/components/ui/button";
@@ -11,7 +11,15 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "~/components/ui/select";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "~/components/ui/tooltip";
+import { isMobile } from "~/lib/utils";
 import { SUPPORTED_LANGUAGES, type SupportedLanguage } from "~shared/constants";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 
 // Types
 interface UploadSectionProps {
@@ -30,6 +38,7 @@ interface FileDetailsProps {
 	file: File;
 	onClear?: () => void;
 }
+
 // Animation variants
 const animations = {
 	fadeInUp: {
@@ -77,6 +86,7 @@ const getFileIcon = (fileType: string) => {
 const formatFileSize = (bytes: number): string => {
 	return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 };
+
 // Sub-components
 const FileDetails = ({ file, onClear }: FileDetailsProps) => (
 	<motion.div
@@ -130,35 +140,6 @@ const FileDetails = ({ file, onClear }: FileDetailsProps) => (
 				</motion.div>
 			)}
 		</div>
-	</motion.div>
-);
-
-const LanguageSelector = ({
-	language,
-	setLanguage,
-}: Pick<UploadSectionProps, "language" | "setLanguage">) => (
-	<motion.div className="space-y-1.5 max-w-[180px]" {...animations.fadeInUp}>
-		<Label htmlFor="language-select" className="text-sm font-medium">
-			Programming Language
-		</Label>
-		<Select
-			onValueChange={(value: SupportedLanguage) => setLanguage(value)}
-			value={language || undefined}
-		>
-			<SelectTrigger id="language-select">
-				<SelectValue placeholder="Select..." />
-			</SelectTrigger>
-			<SelectContent>
-				{SUPPORTED_LANGUAGES.map(({ value, label, icon }) => (
-					<SelectItem key={value} value={value}>
-						<div className="flex items-center gap-2">
-							<img src={icon} alt={`${label} icon`} className="w-5 h-5" />
-							{label}
-						</div>
-					</SelectItem>
-				))}
-			</SelectContent>
-		</Select>
 	</motion.div>
 );
 
@@ -269,21 +250,11 @@ export const UploadSection = ({
 				animate={{ opacity: 1, y: 0 }}
 				transition={{ duration: 0.6, ease: "easeOut" }}
 			>
-				<motion.h1
-					className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent mb-2"
-					initial={{ opacity: 0, y: 20 }}
-					animate={{ opacity: 1, y: 0 }}
-					transition={{ delay: 0.2, duration: 0.5 }}
-				>
+				<motion.h1 className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent mb-2">
 					paper2code
 				</motion.h1>
-				<motion.p
-					className="mb-6 text-slate-600 dark:text-slate-300"
-					initial={{ opacity: 0 }}
-					animate={{ opacity: 1 }}
-					transition={{ delay: 0.4, duration: 0.5 }}
-				>
-					Execute your handwritten code with ease.
+				<motion.p className="mb-6 text-slate-600 dark:text-slate-300">
+					Transform handwritten code into executable programs
 				</motion.p>
 			</motion.div>
 
@@ -294,14 +265,70 @@ export const UploadSection = ({
 				animate={{ opacity: 1 }}
 				transition={{ duration: 0.5, delay: 0.3 }}
 			>
-				<LanguageSelector language={language} setLanguage={setLanguage} />
+				<div className="space-y-1.5 max-w-[180px]">
+					<Label htmlFor="language-select" className="text-sm font-medium">
+						Programming Language
+					</Label>
+					<Select
+						onValueChange={(value: SupportedLanguage) => setLanguage(value)}
+						value={language || undefined}
+					>
+						<SelectTrigger id="language-select">
+							<SelectValue placeholder="Select..." />
+						</SelectTrigger>
+						<SelectContent>
+							{SUPPORTED_LANGUAGES.map(({ value, label, icon }) => (
+								<SelectItem key={value} value={value}>
+									<div className="flex items-center gap-2">
+										<img src={icon} alt={`${label} icon`} className="w-5 h-5" />
+										{label}
+									</div>
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+				</div>
 
 				<motion.div
 					className="space-y-1.5"
 					{...animations.fadeInUp}
 					transition={{ delay: 0.6 }}
 				>
-					<Label className="text-sm font-medium">Handwritten Code File</Label>
+					<div className="flex items-center gap-2">
+						<Label className="text-sm font-medium">Handwritten Code File</Label>
+						{isMobile() ? (
+							<Popover>
+								<PopoverTrigger asChild>
+									<Info className="h-4 w-4 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300" />
+								</PopoverTrigger>
+								<PopoverContent className="w-[260px]">
+									<p className="text-sm">
+										Programs should include any required test data - user input
+										during execution is not supported yet.
+									</p>
+								</PopoverContent>
+							</Popover>
+						) : (
+							<TooltipProvider>
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Info className="h-4 w-4 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 cursor-help" />
+									</TooltipTrigger>
+									<TooltipContent
+										side="right"
+										align="start"
+										className="max-w-[260px]"
+									>
+										<p>
+											Programs should include any required test data - user
+											input during execution is not supported yet.
+										</p>
+									</TooltipContent>
+								</Tooltip>
+							</TooltipProvider>
+						)}
+					</div>
+
 					<div {...getRootProps()}>
 						<motion.div
 							whileTap={{ scale: 0.995 }}
