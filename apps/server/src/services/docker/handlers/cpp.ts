@@ -16,11 +16,19 @@ export const cppHandler: LanguageHandler = {
 
 		// Build array of shell commands to execute
 		const commands = [
-			`mkdir -p ${uniqueDir}`, // Create temp directory
-			`echo ${encodedContent} | base64 -d > ${uniqueDir}/${sourceFile}`, // Write C++ file
-			// Capture both stdout and stderr during compilation and execution
-			`g++ ${uniqueDir}/${sourceFile} -o ${uniqueDir}/${executableFile} 2>&1 && cd ${uniqueDir} && ./${executableFile} 2>&1 || exit 1`,
-			`rm -rf ${uniqueDir}`, // Clean up
+			// Create directory and write file
+			`mkdir -p ${uniqueDir}`,
+			`echo ${encodedContent} | base64 -d > ${uniqueDir}/${sourceFile}`,
+
+			// Compile with error capture
+			`cd ${uniqueDir}`,
+			`g++ ${sourceFile} -o ${executableFile} 2>&1`,
+
+			// Run with error capture - only if compilation succeeds
+			`if [ $? -eq 0 ]; then ./${executableFile} 2>&1; else exit 1; fi`,
+
+			// Cleanup
+			`cd .. && rm -rf ${uniqueDir}`,
 		];
 
 		// Join commands with AND operator
