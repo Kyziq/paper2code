@@ -19,6 +19,40 @@ const formatError = (
 	// Split into lines and filter out empty lines
 	const lines = errorText.split("\n").filter((line) => line.trim());
 
+	if (language === "cpp") {
+		// For C++, focus on the actual error messages
+		const relevantLines = lines.filter((line) => {
+			return (
+				line.includes(": error:") ||
+				line.includes(": warning:") ||
+				line.includes("undefined reference to") ||
+				(line.includes("|") && !line.includes("In file included from"))
+			);
+		});
+
+		if (relevantLines.length === 0) {
+			// If no specific error messages found, return the original error
+			return errorText.trim();
+		}
+
+		// Format each error line to be more readable
+		return relevantLines
+			.map((line) => {
+				// Remove file path prefix
+				const cleanedLine = line
+					.replace(/^[^:]+:/, "")
+					.replace(/\/tmp\/temp_[^/]+\//, "");
+				// Extract line number and error message
+				const match = cleanedLine.match(/(\d+):(\d+:)?\s*(.+)/);
+				if (match) {
+					const [, lineNum, , message] = match;
+					return `Line ${lineNum}: ${message.trim()}`;
+				}
+				return cleanedLine.trim();
+			})
+			.join("\n");
+	}
+
 	if (language === "python") {
 		// For Python, keep traceback and error message
 		const relevantLines = lines.filter(
@@ -31,25 +65,34 @@ const formatError = (
 		);
 		return relevantLines.join("\n");
 	}
-	// For C++ and Java
-	const relevantLines = lines
-		.filter((line) => {
-			return (
-				line.includes(": error:") ||
-				line.includes("|") ||
-				line.includes("In function")
-			);
-		})
-		.filter((line) => !line.includes("In file included from"));
 
-	return relevantLines
-		.map((line) => {
-			return line
-				.replace(/^[^:]+:/, "")
-				.replace(/\/tmp\/temp_[^/]+\//, "")
-				.trim();
-		})
-		.join("\n");
+	if (language === "java") {
+		// For Java, focus on compilation and runtime errors
+		const relevantLines = lines.filter(
+			(line) =>
+				line.includes("error:") ||
+				line.includes("Exception in thread") ||
+				line.includes("at ") ||
+				line.includes("symbol:") ||
+				line.includes("location:"),
+		);
+
+		if (relevantLines.length === 0) {
+			return errorText.trim();
+		}
+
+		return relevantLines
+			.map((line) => {
+				// Remove file path prefix for compilation errors
+				return line
+					.replace(/^[^:]+:/, "")
+					.replace(/\/tmp\/temp_[^/]+\//, "")
+					.trim();
+			})
+			.join("\n");
+	}
+
+	return errorText.trim();
 };
 
 const buildDockerExecCommand = (serviceName: string, command: string) => {
@@ -84,7 +127,7 @@ export const runContainer = async (
 			timeout: DOCKER_CONFIG.EXECUTION.TIMEOUT,
 		});
 
-		// 4. Check for errors (stderr)
+		// 4. Handle compilation errors and runtime output
 		if (stderr) {
 			const formattedError = formatError(stderr, language);
 			logger.error(`Execution failed [ID: ${executionId}]:\n${formattedError}`);
@@ -104,11 +147,32 @@ export const runContainer = async (
 			output,
 		};
 	} catch (error) {
-		// 6. Handle any errors
-		const errorMessage = error instanceof Error ? error.message : String(error);
+		// 6. Handle execution errors
+		let errorMessage = "";
+
+		if (error instanceof Error) {
+			// Check if the error contains compilation/runtime errors
+			const errorText = error.message;
+			if (
+				errorText.includes(": error:") ||
+				errorText.includes("Exception") ||
+				errorText.includes("Error:")
+			) {
+				errorMessage = formatError(errorText, language);
+			} else {
+				// Generic error (timeout, system error, etc.)
+				errorMessage = error.message;
+			}
+		} else {
+			errorMessage = String(error);
+		}
+
 		logger.error(
 			`Failed to execute code [ID: ${executionId}]: ${errorMessage}`,
 		);
-		throw error; // Re-throw the error to be handled by the caller
+		return {
+			success: false,
+			output: errorMessage,
+		};
 	}
 };
