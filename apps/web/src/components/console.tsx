@@ -42,12 +42,10 @@ export const Console = ({
 	onExecute,
 }: ConsoleProps) => {
 	const controls = useAnimationControls();
-
 	const consoleRef = useRef<HTMLDivElement>(null);
 	const [output, setOutput] = useState<{ text: string; isError: boolean }[]>(
 		[],
 	);
-	const [isTyping, setIsTyping] = useState(false);
 	const [isDialogOpen, setIsDialogOpen] = useState(false);
 	const [editableCode, setEditableCode] = useState(ocrResult || "");
 	const [isFileVisible, setIsFileVisible] = useState(false);
@@ -56,7 +54,7 @@ export const Console = ({
 		if (!message.trim()) {
 			setOutput([
 				{
-					text: "No output yet. Click the edit button to modify and run the code.",
+					text: "No output.",
 					isError: false,
 				},
 			]);
@@ -74,12 +72,7 @@ export const Console = ({
 
 		if (hasError) {
 			// Treat the entire message as one error block
-			setOutput([
-				{
-					text: message,
-					isError: true,
-				},
-			]);
+			setOutput([{ text: message, isError: true }]);
 		} else {
 			// Split normal output into lines
 			const lines = message
@@ -92,21 +85,10 @@ export const Console = ({
 			setOutput(lines);
 		}
 
-		setIsTyping(true);
-
 		if (consoleRef.current) {
 			consoleRef.current.scrollTop = consoleRef.current.scrollHeight;
 		}
-
-		const timer = setTimeout(
-			() => {
-				setIsTyping(false);
-			},
-			output.length * 50 + 300,
-		);
-
-		return () => clearTimeout(timer);
-	}, [message, output.length]);
+	}, [message]);
 
 	useEffect(() => {
 		setEditableCode(ocrResult || "");
@@ -174,40 +156,62 @@ export const Console = ({
 				>
 					<div className="flex items-center gap-3">
 						<div className="flex items-center gap-2">
-							<Terminal size={16} />
-							<span className="font-caskaydiaCoveNerd text-sm font-medium">
+							<div className="relative">
+								{isProcessing ? (
+									<motion.div
+										className="absolute -inset-1 bg-blue-500/20 rounded-full blur-sm"
+										animate={{ scale: [1, 1.2, 1] }}
+										transition={{
+											duration: 2,
+											repeat: Number.POSITIVE_INFINITY,
+										}}
+									/>
+								) : null}
+								<Terminal
+									size={16}
+									className={`relative z-10 ${isProcessing ? "text-blue-400" : ""}`}
+								/>
+							</div>
+							<span className="font-caskaydiaCoveNerd text-sm font-medium relative">
 								Console Output
 							</span>
 						</div>
+
 						{language && (
-							<Badge
-								variant={language}
-								showIcon={true}
-								className="flex items-center gap-1.5 px-2 py-0.5 text-xs"
+							<motion.div
+								initial={{ opacity: 0, scale: 0.8 }}
+								animate={{ opacity: 1, scale: 1 }}
+								transition={{ type: "spring", duration: 0.5 }}
 							>
-								{language.toUpperCase()}
-							</Badge>
+								<Badge
+									variant={language}
+									showIcon={true}
+									className="flex items-center gap-1.5 px-2 py-0.5 text-xs hover:scale-105 transition-transform"
+								>
+									{language.toUpperCase()}
+								</Badge>
+							</motion.div>
 						)}
 					</div>
 
-					<div className="flex items-center gap-2">
-						{isProcessing && (
-							<div className="flex items-center gap-2 text-xs text-muted-foreground">
-								<Loader2 size={14} className="animate-spin" />
-								Processing...
-							</div>
-						)}
-
+					<motion.div
+						className="flex items-center gap-2"
+						whileHover={{ scale: 1.02 }}
+					>
 						<Button
 							size="icon"
 							variant="ghost"
-							className="h-8 w-8 rounded-full bg-zinc-700/50 hover:bg-zinc-700"
+							className={`h-8 w-8 rounded-full transition-all duration-300 ${
+								isProcessing
+									? "bg-blue-500/20 text-blue-400 shadow-lg shadow-blue-500/20"
+									: "bg-zinc-700/50 hover:bg-zinc-700 hover:shadow-lg"
+							}`}
 							onClick={() => setIsDialogOpen(true)}
 							disabled={isProcessing}
 						>
 							<Pencil className="h-4 w-4" />
 						</Button>
-					</div>
+					</motion.div>
 				</motion.div>
 
 				<div
@@ -215,45 +219,103 @@ export const Console = ({
 					className="flex-1 min-h-0 overflow-y-auto bg-zinc-950 p-4 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-zinc-700"
 				>
 					<AnimatePresence mode="wait">
-						{output.map((item, index) => (
+						{isProcessing ? (
 							<motion.div
-								key={`${index}-${item.text}`}
-								initial={{ opacity: 0, x: -10 }}
-								animate={{ opacity: 1, x: 0 }}
-								exit={{ opacity: 0, x: 10 }}
-								transition={{ duration: 0.2, delay: index * 0.05 }}
+								className="flex items-center justify-center h-full"
+								initial={{ opacity: 0 }}
+								animate={{ opacity: 1 }}
+								exit={{ opacity: 0 }}
 							>
-								{item.isError ? (
-									// Error message block
-									<pre className="font-caskaydiaCoveNerd text-red-400 whitespace-pre-wrap break-words">
-										{item.text}
-									</pre>
-								) : (
-									// Normal output line
-									<div className="flex items-start mb-1">
-										<span className="mr-2 font-bold text-emerald-400">
-											&gt;
-										</span>
-										<span className="font-caskaydiaCoveNerd text-zinc-200">
-											{item.text}
-										</span>
-									</div>
-								)}
-
-								{isTyping && index === output.length - 1 && (
-									<motion.span
-										animate={{ opacity: [0, 1, 0] }}
-										transition={{
-											repeat: Number.POSITIVE_INFINITY,
-											duration: 1,
-										}}
-										className="ml-1 text-primary"
+								<div className="relative">
+									{/* Code execution visualization */}
+									<motion.div
+										className="absolute inset-0 flex items-center justify-center"
+										initial="hidden"
+										animate="visible"
 									>
-										▋
-									</motion.span>
-								)}
+										{[...Array(3)].map((_, i) => (
+											<motion.div
+												key={`unique-key-${i}-${Date.now()}`}
+												className="absolute w-16 h-16 border-2 border-blue-400/30 rounded-lg"
+												animate={{
+													scale: [1, 1.2, 1],
+													opacity: [0.3, 0.5, 0.3],
+													rotate: [0, 90, 180, 270, 360],
+												}}
+											/>
+										))}
+									</motion.div>
+
+									{/* Terminal icon */}
+									<motion.div
+										className="relative z-10 bg-zinc-900 p-3 rounded-lg"
+										animate={{
+											scale: [1, 1.05, 1],
+											boxShadow: [
+												"0 0 0 0 rgba(59, 130, 246, 0)",
+												"0 0 0 8px rgba(59, 130, 246, 0.1)",
+												"0 0 0 0 rgba(59, 130, 246, 0)",
+											],
+										}}
+										transition={{
+											duration: 2,
+											repeat: Number.POSITIVE_INFINITY,
+											ease: "easeInOut",
+										}}
+									>
+										<Terminal size={24} className="text-blue-400" />
+									</motion.div>
+
+									{/* Progress indicator */}
+									<div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2">
+										<div className="flex gap-1">
+											{[0, 1, 2].map((i) => (
+												<motion.div
+													key={i}
+													className="w-1 h-1 rounded-full bg-blue-400"
+													animate={{
+														scale: [1, 1.5, 1],
+														opacity: [0.3, 1, 0.3],
+													}}
+													transition={{
+														duration: 1,
+														repeat: Number.POSITIVE_INFINITY,
+														delay: i * 0.2,
+													}}
+												/>
+											))}
+										</div>
+									</div>
+								</div>
 							</motion.div>
-						))}
+						) : (
+							output.map((item, index) => (
+								<motion.div
+									key={`${index}-${item.text}`}
+									initial={{ opacity: 0, x: -10 }}
+									animate={{ opacity: 1, x: 0 }}
+									exit={{ opacity: 0, x: 10 }}
+									transition={{ duration: 0.2, delay: index * 0.05 }}
+								>
+									{item.isError ? (
+										// Error message block
+										<pre className="font-caskaydiaCoveNerd text-red-400 whitespace-pre-wrap break-words">
+											{item.text}
+										</pre>
+									) : (
+										// Normal output line
+										<div className="flex items-start mb-1">
+											<span className="mr-2 font-bold text-emerald-400">
+												&gt;
+											</span>
+											<span className="font-caskaydiaCoveNerd text-zinc-200">
+												{item.text}
+											</span>
+										</div>
+									)}
+								</motion.div>
+							))
+						)}
 					</AnimatePresence>
 				</div>
 			</motion.div>
