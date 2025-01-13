@@ -18,8 +18,8 @@ export const cppHandler: LanguageHandler = {
 		const commands = [
 			`mkdir -p ${uniqueDir}`, // Create temp directory
 			`echo ${encodedContent} | base64 -d > ${uniqueDir}/${sourceFile}`, // Write C++ file
-			`g++ ${uniqueDir}/${sourceFile} -o ${uniqueDir}/${executableFile}`, // Compile code
-			`cd ${uniqueDir} && ./${executableFile}`, // Run the program
+			// Capture both stdout and stderr during compilation and execution
+			`g++ ${uniqueDir}/${sourceFile} -o ${uniqueDir}/${executableFile} 2>&1 && cd ${uniqueDir} && ./${executableFile} 2>&1 || exit 1`,
 			`rm -rf ${uniqueDir}`, // Clean up
 		];
 
