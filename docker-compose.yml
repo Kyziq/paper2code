@@ -19,7 +19,7 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - ./apps/server/.env:${NODE_ENV:-prod}
+      - ./apps/server/.env.${NODE_ENV:-prod}
       - ./credentials:/app/credentials
       - /var/run/docker.sock:/var/run/docker.sock  # Share Docker socket
     depends_on:
