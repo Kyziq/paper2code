@@ -11,7 +11,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { routeTree } from "~/routeTree.gen";
 
 // Create a new router instance
-const router = createRouter({ routeTree, basepath: "/paper2code" });
+const router = createRouter({ routeTree });
 
 // Register the router instance for type safety
 declare module "@tanstack/react-router" {
