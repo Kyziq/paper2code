@@ -8,7 +8,7 @@ services:
     ports:
       - "5173:5173"
     env_file:
-      - /opt/paper2code/apps/web/.env.prod:/app/apps/web/.env
+      - ./apps/web/.env
     depends_on:
       - server
 
@@ -19,7 +19,7 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - /opt/paper2code/apps/server/.env.prod:/app/apps/server/.env
+      - ./apps/server/.env:/app/apps/server/.env
       - ./credentials:/app/credentials
       - /var/run/docker.sock:/var/run/docker.sock  # Share Docker socket
     depends_on:
