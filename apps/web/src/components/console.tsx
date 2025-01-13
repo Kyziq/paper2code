@@ -10,7 +10,7 @@ import {
 	RotateCcw,
 	Terminal,
 } from "lucide-react";
-import { AnimatePresence, motion, useAnimationControls } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -21,6 +21,7 @@ import {
 	DialogTitle,
 } from "~/components/ui/dialog";
 import { Toggle } from "~/components/ui/toggle";
+import { isMobile } from "~/lib/utils";
 import type { SupportedLanguage } from "~shared/constants";
 import { CodeEditorWrapper } from "./code-editor-wrapper";
 
@@ -41,7 +42,6 @@ export const Console = ({
 	isProcessing = false,
 	onExecute,
 }: ConsoleProps) => {
-	const controls = useAnimationControls();
 	const consoleRef = useRef<HTMLDivElement>(null);
 	const [output, setOutput] = useState<{ text: string; isError: boolean }[]>(
 		[],
@@ -139,6 +139,190 @@ export const Console = ({
 			</div>
 		);
 	};
+
+	const isMobileDevice = isMobile();
+
+	const renderMobileDialog = () => (
+		<DialogContent className="flex h-[100dvh] max-h-[100dvh] w-full flex-col overflow-hidden p-0">
+			<DialogHeader className="border-b px-4 py-3">
+				<div className="flex items-center justify-between">
+					<DialogTitle className="text-base font-medium">
+						Code Editor
+					</DialogTitle>
+					<div className="flex items-center gap-2 mr-8">
+						{language && (
+							<Badge
+								variant={language}
+								showIcon={true}
+								className="flex items-center gap-1.5 px-2 py-0.5 text-xs"
+							>
+								{language.toUpperCase()}
+							</Badge>
+						)}
+					</div>
+				</div>
+			</DialogHeader>
+
+			<div className="flex flex-1 flex-col overflow-hidden">
+				{/* Main Content Area */}
+				<div className="relative flex-1 overflow-hidden">
+					<CodeEditorWrapper
+						value={editableCode}
+						language={language || ""}
+						onChange={(value) => setEditableCode(value)}
+						extensions={extensions}
+						isProcessing={isProcessing}
+					/>
+				</div>
+
+				{/* Bottom Controls */}
+				<div className="border-t bg-background p-4 space-y-4">
+					{/* Preview Controls */}
+					<div className="flex items-center justify-between gap-2">
+						<Toggle
+							variant="outline"
+							aria-label="Toggle preview"
+							pressed={isFileVisible}
+							onPressedChange={setIsFileVisible}
+							className="flex-1 justify-center gap-2"
+						>
+							<Eye className={isFileVisible ? "h-4 w-4" : "hidden"} />
+							<EyeOff className={!isFileVisible ? "h-4 w-4" : "hidden"} />
+							<span className="text-sm">Preview</span>
+						</Toggle>
+
+						<Button
+							variant="outline"
+							onClick={handleReset}
+							disabled={isProcessing}
+							className="gap-2"
+						>
+							<RotateCcw size={14} />
+							Reset
+						</Button>
+					</div>
+
+					{/* Preview Panel */}
+					<AnimatePresence>
+						{isFileVisible && (
+							<motion.div
+								initial={{ height: 0, opacity: 0 }}
+								animate={{ height: "12rem", opacity: 1 }}
+								exit={{ height: 0, opacity: 0 }}
+								className="overflow-hidden rounded-lg border"
+							>
+								{renderOriginalFile()}
+							</motion.div>
+						)}
+					</AnimatePresence>
+
+					{/* Run Button */}
+					<Button
+						onClick={handleExecute}
+						disabled={isProcessing || !language}
+						className="w-full gap-2"
+					>
+						{isProcessing ? (
+							<Loader2 size={14} className="animate-spin" />
+						) : (
+							<Terminal size={14} />
+						)}
+						Run Code
+					</Button>
+				</div>
+			</div>
+		</DialogContent>
+	);
+
+	const renderDesktopDialog = () => (
+		<DialogContent className="max-w-[85vw] p-0">
+			<DialogHeader className="border-b px-4 py-3">
+				<div className="flex items-center justify-between">
+					<DialogTitle className="text-base font-medium">
+						Code Editor
+					</DialogTitle>
+					<div className="flex items-center gap-2 mr-8">
+						{language && (
+							<Badge
+								variant={language}
+								showIcon={true}
+								className="flex items-center gap-1.5 px-2 py-0.5 text-xs"
+							>
+								{language.toUpperCase()}
+							</Badge>
+						)}
+					</div>
+				</div>
+			</DialogHeader>
+
+			<div className="flex h-[70vh] gap-4 p-4">
+				<div className="flex flex-1 flex-col">
+					<h3 className="mb-2 text-sm font-medium text-muted-foreground">
+						Detected Code
+					</h3>
+					<div className="flex-1 overflow-hidden rounded-lg border">
+						<CodeEditorWrapper
+							value={editableCode}
+							language={language || ""}
+							onChange={(value) => setEditableCode(value)}
+							extensions={extensions}
+							isProcessing={isProcessing}
+						/>
+					</div>
+				</div>
+
+				{isFileVisible && (
+					<div className="flex w-1/2 flex-col">
+						<h3 className="mb-2 text-sm font-medium text-muted-foreground">
+							Original File
+						</h3>
+						<div className="flex-1 overflow-hidden rounded-lg border">
+							{renderOriginalFile()}
+						</div>
+					</div>
+				)}
+			</div>
+
+			<div className="flex items-center justify-between border-t bg-muted/30 p-4">
+				<div className="flex items-center gap-2">
+					<Toggle
+						variant="outline"
+						aria-label="Toggle preview"
+						pressed={isFileVisible}
+						onPressedChange={setIsFileVisible}
+						className="gap-2"
+					>
+						<Eye className={isFileVisible ? "h-4 w-4" : "hidden"} />
+						<EyeOff className={!isFileVisible ? "h-4 w-4" : "hidden"} />
+						<span className="text-sm">Preview</span>
+					</Toggle>
+
+					<Button
+						variant="outline"
+						onClick={handleReset}
+						disabled={isProcessing}
+						className="gap-2"
+					>
+						<RotateCcw size={14} />
+						Reset Changes
+					</Button>
+				</div>
+
+				<Button
+					onClick={handleExecute}
+					disabled={isProcessing || !language}
+					className="min-w-[100px] gap-2"
+				>
+					{isProcessing ? (
+						<Loader2 size={14} className="animate-spin" />
+					) : (
+						<Terminal size={14} />
+					)}
+					Run Code
+				</Button>
+			</div>
+		</DialogContent>
+	);
 
 	return (
 		<div className="relative h-full w-full">
@@ -321,109 +505,7 @@ export const Console = ({
 			</motion.div>
 
 			<Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-				<DialogContent className="max-w-[90vw] lg:max-w-[85vw] p-0">
-					<DialogHeader className="border-b px-4 py-3">
-						<div>
-							<DialogTitle className="text-base font-medium">
-								Code Editor
-							</DialogTitle>
-						</div>
-					</DialogHeader>
-
-					<div className="flex flex-col gap-4 p-4 h-[70vh] lg:flex-row">
-						{isFileVisible && (
-							<div className="flex-1 flex flex-col min-h-[300px] lg:min-h-0">
-								<h3 className="text-sm font-medium mb-2 text-muted-foreground">
-									Original File
-								</h3>
-								<div className="flex-1 overflow-hidden rounded-lg border">
-									{renderOriginalFile()}
-								</div>
-							</div>
-						)}
-
-						<div className="flex-1 flex flex-col min-h-[300px] lg:min-h-0">
-							<h3 className="text-sm font-medium mb-2 text-muted-foreground">
-								Detected Code
-							</h3>
-							<div className="flex-1 overflow-hidden rounded-lg border h-full">
-								<CodeEditorWrapper
-									value={editableCode}
-									language={language || ""}
-									onChange={(value) => setEditableCode(value)}
-									extensions={extensions}
-									isProcessing={isProcessing}
-								/>
-							</div>
-						</div>
-					</div>
-
-					<div className="flex items-center justify-between border-t bg-muted/30 p-4">
-						<div className="flex items-center gap-2">
-							{/* Toggle Button */}
-							<Toggle
-								variant="outline"
-								aria-label="Toggle preview"
-								pressed={isFileVisible}
-								onPressedChange={setIsFileVisible}
-								className="gap-2"
-							>
-								<Eye className={isFileVisible ? "h-4 w-4" : "hidden"} />
-								<EyeOff className={!isFileVisible ? "h-4 w-4" : "hidden"} />
-								<span className="text-sm">Preview</span>
-							</Toggle>
-
-							{/* Reset Button */}
-							<Button
-								variant="outline"
-								onClick={() => {
-									// Execute reset immediately
-									handleReset();
-									// Play the animation separately
-									controls
-										.start({
-											rotate: 360,
-											transition: {
-												duration: 1,
-												ease: [0.4, 0, 0.2, 1],
-											},
-										})
-										.then(() => {
-											controls.set({ rotate: 0 });
-										});
-								}}
-								disabled={isProcessing}
-								className="gap-2"
-							>
-								<motion.div
-									animate={controls}
-									whileHover={{ rotate: 45 }}
-									transition={{
-										duration: 0.3,
-										ease: "easeInOut",
-									}}
-								>
-									<RotateCcw size={14} />
-								</motion.div>
-								Reset Changes
-							</Button>
-						</div>
-
-						{/* Run Button */}
-						<Button
-							onClick={handleExecute}
-							disabled={isProcessing || !language}
-							className="min-w-[100px] gap-2"
-						>
-							{isProcessing ? (
-								<Loader2 size={14} className="animate-spin" />
-							) : (
-								<Terminal size={14} />
-							)}
-							Run Code
-						</Button>
-					</div>
-				</DialogContent>
+				{isMobileDevice ? renderMobileDialog() : renderDesktopDialog()}
 			</Dialog>
 		</div>
 	);
