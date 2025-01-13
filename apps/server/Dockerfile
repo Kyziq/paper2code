@@ -2,7 +2,7 @@ FROM oven/bun:latest
 
 WORKDIR /app
 
-# Install Docker CLI for Debian
+# Install Docker CLI
 RUN apt-get update && \
     apt-get install -y ca-certificates curl gnupg && \
     install -m 0755 -d /etc/apt/keyrings && \
@@ -15,11 +15,14 @@ RUN apt-get update && \
     apt-get update && \
     apt-get install -y docker-ce-cli
 
-# Copy source code
+# Copy entire project for monorepo
 COPY . .
 
 # Install dependencies
 RUN bun install
+
+# Set the correct working directory
+WORKDIR /app/apps/server
 
 # Expose the port
 EXPOSE 3000

@@ -2,11 +2,14 @@ FROM oven/bun:latest
 
 WORKDIR /app
 
-# Copy the source code (only include files within /apps/web)
+# Copy entire project for monorepo
 COPY . .
 
 # Install dependencies
 RUN bun install
+
+# Set the correct working directory
+WORKDIR /app/apps/web
 
 # Expose the port
 EXPOSE 5173
