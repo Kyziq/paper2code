@@ -5,12 +5,6 @@ import { Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { enhanceCode } from "~/api";
 import { Button } from "./ui/button";
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipProvider,
-	TooltipTrigger,
-} from "./ui/tooltip";
 
 interface CodeEditorWrapperProps {
 	value: string; // Current code value
@@ -89,34 +83,25 @@ export const CodeEditorWrapper = ({
 			/>
 
 			<div className="absolute top-2 right-2">
-				<TooltipProvider>
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								size="sm"
-								variant="secondary"
-								className="gap-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 border border-purple-400/30"
-								onClick={handleAIAssist}
-								disabled={isProcessing || enhanceMutation.isPending}
-							>
-								<Sparkles
-									className={`h-4 w-4 text-purple-100 ${!enhanceMutation.isPending && "animate-[pulse_1.5s_ease-in-out_infinite]"}`}
-								/>
-								{enhanceMutation.isPending ? (
-									<>
-										<div className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
-										<span>Processing...</span>
-									</>
-								) : (
-									"AI Enhance"
-								)}
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent>
-							<p>Let AI help optimize and improve your code</p>
-						</TooltipContent>
-					</Tooltip>
-				</TooltipProvider>
+				<Button
+					size="sm"
+					variant="secondary"
+					className="gap-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 border border-purple-400/30"
+					onClick={handleAIAssist}
+					disabled={isProcessing || enhanceMutation.isPending}
+				>
+					<Sparkles
+						className={`h-4 w-4 text-purple-100 ${!enhanceMutation.isPending && "animate-[pulse_1.5s_ease-in-out_infinite]"}`}
+					/>
+					{enhanceMutation.isPending ? (
+						<>
+							<div className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
+							<span>Processing...</span>
+						</>
+					) : (
+						"AI Enhance"
+					)}
+				</Button>
 			</div>
 		</div>
 	);
