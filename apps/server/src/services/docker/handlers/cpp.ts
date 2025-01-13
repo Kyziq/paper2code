@@ -19,16 +19,10 @@ export const cppHandler: LanguageHandler = {
 			// Create directory and write file
 			`mkdir -p ${uniqueDir}`,
 			`echo ${encodedContent} | base64 -d > ${uniqueDir}/${sourceFile}`,
-
-			// Compile with error capture
-			`cd ${uniqueDir}`,
-			`g++ ${sourceFile} -o ${executableFile} 2>&1`,
-
-			// Run with error capture - only if compilation succeeds
-			`if [ $? -eq 0 ]; then ./${executableFile} 2>&1; else exit 1; fi`,
-
+			// Capture all output but don't let the command fail with || true
+			`cd ${uniqueDir} && g++ ${sourceFile} -o ${executableFile} 2>&1 && ./${executableFile} 2>&1 || true`,
 			// Cleanup
-			`cd .. && rm -rf ${uniqueDir}`,
+			`rm -rf ${uniqueDir}`,
 		];
 
 		// Join commands with AND operator
