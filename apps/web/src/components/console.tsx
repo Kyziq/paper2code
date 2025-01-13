@@ -1,7 +1,4 @@
-import { cpp } from "@codemirror/lang-cpp";
-import { java } from "@codemirror/lang-java";
-import { python } from "@codemirror/lang-python";
-import { EditorView } from "@uiw/react-codemirror";
+import { EditorView, type Extension } from "@uiw/react-codemirror";
 import {
 	Eye,
 	EyeOff,
@@ -34,6 +31,24 @@ interface ConsoleProps {
 	onExecute?: (code: string) => void;
 }
 
+const loadLanguageSupport = async (language: string): Promise<Extension> => {
+	try {
+		switch (language) {
+			case "python":
+				return (await import("@codemirror/lang-python")).python();
+			case "cpp":
+				return (await import("@codemirror/lang-cpp")).cpp();
+			case "java":
+				return (await import("@codemirror/lang-java")).java();
+			default:
+				throw new Error(`Unsupported language: ${language}`);
+		}
+	} catch (error) {
+		console.error(`Error loading language support: ${error}`);
+		return EditorView.lineWrapping; // Fallback to basic editor
+	}
+};
+
 export const Console = ({
 	message,
 	ocrResult,
@@ -49,6 +64,31 @@ export const Console = ({
 	const [isDialogOpen, setIsDialogOpen] = useState(false);
 	const [editableCode, setEditableCode] = useState(ocrResult || "");
 	const [isFileVisible, setIsFileVisible] = useState(false);
+	const [extensions, setExtensions] = useState<Extension[]>([
+		EditorView.lineWrapping,
+	]);
+	const [isLoadingLanguage, setIsLoadingLanguage] = useState(false);
+
+	// Handle language support loading
+	useEffect(() => {
+		if (!language) return;
+
+		const loadLanguage = async () => {
+			setIsLoadingLanguage(true);
+			try {
+				const languageSupport = await loadLanguageSupport(language);
+				setExtensions([languageSupport, EditorView.lineWrapping]);
+			} catch (error) {
+				console.error("Failed to load language support:", error);
+				// Fallback to basic editor
+				setExtensions([EditorView.lineWrapping]);
+			} finally {
+				setIsLoadingLanguage(false);
+			}
+		};
+
+		loadLanguage();
+	}, [language]);
 
 	useEffect(() => {
 		if (!message.trim()) {
@@ -105,11 +145,6 @@ export const Console = ({
 		setEditableCode(ocrResult || "");
 	};
 
-	const extensions = [
-		language === "cpp" ? cpp() : language === "python" ? python() : java(),
-		EditorView.lineWrapping,
-	];
-
 	const renderOriginalFile = () => {
 		if (!fileUrl) {
 			return (
@@ -151,13 +186,21 @@ export const Console = ({
 					</DialogTitle>
 					<div className="flex items-center gap-2 mr-8">
 						{language && (
-							<Badge
-								variant={language}
-								showIcon={true}
-								className="flex items-center gap-1.5 px-2 py-0.5 text-xs"
-							>
-								{language.toUpperCase()}
-							</Badge>
+							<>
+								<Badge
+									variant={language}
+									showIcon={true}
+									className="flex items-center gap-1.5 px-2 py-0.5 text-xs"
+								>
+									{language.toUpperCase()}
+								</Badge>
+								{isLoadingLanguage && (
+									<div className="flex items-center gap-2 text-sm text-muted-foreground">
+										<Loader2 className="h-4 w-4 animate-spin" />
+										Loading...
+									</div>
+								)}
+							</>
 						)}
 					</div>
 				</div>
@@ -171,7 +214,7 @@ export const Console = ({
 						language={language || ""}
 						onChange={(value) => setEditableCode(value)}
 						extensions={extensions}
-						isProcessing={isProcessing}
+						isProcessing={isProcessing || isLoadingLanguage}
 					/>
 				</div>
 
@@ -266,7 +309,7 @@ export const Console = ({
 							language={language || ""}
 							onChange={(value) => setEditableCode(value)}
 							extensions={extensions}
-							isProcessing={isProcessing}
+							isProcessing={isProcessing || isLoadingLanguage}
 						/>
 					</div>
 				</div>
