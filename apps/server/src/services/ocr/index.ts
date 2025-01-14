@@ -81,7 +81,7 @@ export async function processOCR(
 			: await processImage(uniqueFileName);
 
 	logger.ocr(`OCR process completed successfully for file: ${uniqueFileName}`);
-	logger.ocr(`Returning code: ${result}`);
+	logger.ocr(`Returning code:\n${result}`);
 	logger.ocr(`Returning fileUrl: ${fileUrl}`);
 	return {
 		code: result,
