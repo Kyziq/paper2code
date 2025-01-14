@@ -8,8 +8,12 @@ RUN apt-get update && \
 
 # Create a non-root user for security
 RUN useradd -m -s /bin/bash runner && \
-    mkdir -p /tmp && \
-    chown -R runner:runner /tmp
+    mkdir -p /tmp/code && \
+    chown -R runner:runner /tmp/code && \
+    chmod 777 /tmp/code
+
+# Set working directory
+WORKDIR /tmp/code
 
 # Switch to non-root user
 USER runner
