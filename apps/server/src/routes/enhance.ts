@@ -24,11 +24,17 @@ export const enhanceRoute = new Elysia().post(
 		}
 
 		try {
-			const prompt = `You are an expert programmer for language ${language}. Please only FIX THE SYNTAX and CODE INDENTATION, WHILE MAINTAINING ITS CORE FUNCTIONALITIES. Here's the code:
+			let prompt = `You are an expert programmer for language ${language}. Please only FIX THE SYNTAX and CODE INDENTATION, WHILE MAINTAINING ITS CORE FUNCTIONALITIES. Here's the code:
 
 ${code}
 
 Please provide only the improved code without any explanations or markdown formatting.`;
+
+			if (language === "java") {
+				prompt += `
+Please make sure the code has a public class.
+`;
+			}
 
 			const chatCompletion = await groq.chat.completions.create({
 				messages: [{ role: "user", content: prompt }],
