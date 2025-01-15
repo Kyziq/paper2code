@@ -52,21 +52,21 @@ int main() {
 
 export async function processOCR(
 	file: File,
-	language: SupportedLanguage,
 ): Promise<{ code: string; fileUrl: string }> {
 	logger.ocr(`Starting OCR process for file: ${file.name}`);
 
-	// If in test mode, return test code based on selected language
+	// Default to Python for test mode
 	if (TEST_MODE) {
 		logger.ocr("🧪 Test mode active - bypassing OCR");
-		const testData = TEST_CODE[language];
-		logger.ocr(`Returning test ${language.toUpperCase()} code`);
+		const testData = TEST_CODE["python" as SupportedLanguage];
+		logger.ocr("Returning test code");
 		logger.ocr(testData.code);
 		return {
 			code: testData.code,
-			fileUrl: testData.fileUrl,
+			fileUrl: testData.fileUrl, // Base64 encoded SVG
 		};
 	}
+
 	await createBucketIfNotExists();
 
 	// Upload file and get unique filename

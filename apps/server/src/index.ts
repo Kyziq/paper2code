@@ -1,6 +1,11 @@
 import { cors } from "@elysiajs/cors";
 import { Elysia } from "elysia";
-import { enhanceRoute, executeRoute, ocrRoute } from "~/routes";
+import {
+	detectLanguageRoute,
+	enhanceRoute,
+	executeRoute,
+	ocrRoute,
+} from "~/routes";
 import { ApiError } from "~/utils/errors";
 import { logger } from "~/utils/logger";
 
@@ -9,6 +14,7 @@ export const app = new Elysia()
 	.use(ocrRoute)
 	.use(executeRoute)
 	.use(enhanceRoute)
+	.use(detectLanguageRoute)
 	.onError(({ error, set }) => {
 		if (error instanceof ApiError) {
 			set.status = error.statusCode;
