@@ -1,76 +1,40 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { createLazyFileRoute } from "@tanstack/react-router";
 import { motion } from "motion/react";
 import { useState } from "react";
-import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
-
-import { executeCode, uploadFile } from "~/api";
+import { executeCode } from "~/api";
 import { Console } from "~/components/console";
 import {
 	ResizableHandle,
 	ResizablePanel,
 	ResizablePanelGroup,
 } from "~/components/ui/resizable";
-import { UploadSection } from "~/components/upload-section";
+import UploadSection from "~/components/upload-section";
 import { isMobile } from "~/lib/utils";
-import { useStore } from "~/stores/useStore";
-import {
-	ACCEPTED_FILE_EXTENSIONS,
-	MAX_FILE_SIZES,
-	type SupportedLanguage,
-	type SupportedMimeType,
-} from "~shared/constants";
-import type { FileExecutionParams, FileUploadParams } from "~shared/types";
+import type { SupportedLanguage } from "~shared/constants";
+import type { FileExecutionParams } from "~shared/types";
+
+// Type definitions
+interface DetectedCodeResult {
+	code: string;
+	fileUrl: string;
+	language: SupportedLanguage | null;
+}
 
 export const Route = createLazyFileRoute("/")({
 	component: Index,
 });
 
 function Index() {
-	const {
-		file,
-		language,
-		consoleMessage,
-		ocrResult,
-		fileUrl,
-		setFile,
-		setLanguage,
-		setConsoleMessage,
-		setOcrResult,
-		setFileUrl,
-	} = useStore();
-
-	const queryClient = useQueryClient();
+	// State
 	const [showConsole, setShowConsole] = useState(false);
+	const [detectedCode, setDetectedCode] = useState<DetectedCodeResult | null>(
+		null,
+	);
+	const [consoleMessage, setConsoleMessage] = useState("");
 
-	const uploadMutation = useMutation({
-		mutationFn: (data: FileUploadParams) => {
-			const toastId = toast.loading("Extracting code from image...");
-			return uploadFile(data).finally(() => toast.dismiss(toastId));
-		},
-		onSuccess: (result) => {
-			if (result.data) {
-				setConsoleMessage(result.message);
-				setOcrResult(result.data.code);
-				setFileUrl(result.data.fileUrl);
-
-				setShowConsole(true);
-
-				executeMutation.mutate({
-					code: result.data.code,
-					language: result.data.language as SupportedLanguage,
-				});
-			}
-			queryClient.invalidateQueries({ queryKey: ["fileStatus"] });
-		},
-		onError: (error: Error) => {
-			setConsoleMessage(error.message);
-			setShowConsole(true);
-			toast.error("Failed to process file");
-		},
-	});
-
+	// Code execution mutation
 	const executeMutation = useMutation({
 		mutationFn: (params: FileExecutionParams) => {
 			const toastId = toast.loading("Executing code...");
@@ -87,7 +51,6 @@ function Index() {
 			} else {
 				toast.success("Code executed successfully!");
 			}
-			queryClient.invalidateQueries({ queryKey: ["executionResult"] });
 		},
 		onError: (error: Error) => {
 			setConsoleMessage(error.message);
@@ -97,59 +60,18 @@ function Index() {
 		},
 	});
 
-	const { getRootProps, getInputProps, isDragActive } = useDropzone({
-		onDrop: (acceptedFiles) => {
-			const file = acceptedFiles[0];
-			if (!file) return;
+	// Handle proceeding to execution
+	const handleProceed = (result: DetectedCodeResult) => {
+		setDetectedCode(result);
+		setShowConsole(true);
 
-			// Check file size
-			const maxSize = MAX_FILE_SIZES[file.type as SupportedMimeType];
-			if (file.size > maxSize) {
-				const maxSizeMB = maxSize / (1024 * 1024);
-				toast.error(`File size exceeds ${maxSizeMB}MB limit`);
-				return;
-			}
-
-			setFile(file);
-		},
-		onDropRejected: (fileRejections) => {
-			const firstRejection = fileRejections[0];
-			const error = firstRejection?.errors[0];
-
-			if (error?.code === "file-invalid-type") {
-				toast.error("Invalid file type", {
-					description: `Please upload: ${Object.values(ACCEPTED_FILE_EXTENSIONS)
-						.flat()
-						.join(", ")}`,
-				});
-			} else {
-				toast.error("File upload rejected", {
-					description: error?.message || "Unknown error occurred",
-				});
-			}
-		},
-		accept: ACCEPTED_FILE_EXTENSIONS,
-		multiple: false,
-		// Validate file size
-		validator: (file) => {
-			const maxSize = MAX_FILE_SIZES[file.type as SupportedMimeType];
-			if (file.size > maxSize) {
-				return {
-					code: "file-too-large",
-					message: `File size exceeds ${maxSize / (1024 * 1024)}MB limit`,
-				};
-			}
-			return null;
-		},
-	});
-
-	const isUploadPending = uploadMutation.isPending;
-	const isExecutePending = executeMutation.isPending;
-	const isProcessing = isUploadPending || isExecutePending;
-	const getConsoleMessage = () => {
-		if (isUploadPending) return "Processing file...";
-		if (isExecutePending) return "Executing code...";
-		return consoleMessage;
+		// Auto-execute the code
+		if (result.language) {
+			executeMutation.mutate({
+				code: result.code,
+				language: result.language,
+			});
+		}
 	};
 
 	return (
@@ -163,22 +85,7 @@ function Index() {
 						// Mobile layout - stacked
 						<>
 							<motion.div className="flex-1 p-4 sm:p-6 lg:p-8" layout>
-								<UploadSection
-									language={language}
-									setLanguage={setLanguage}
-									file={file}
-									getRootProps={getRootProps}
-									getInputProps={getInputProps}
-									isProcessing={isProcessing}
-									isDragActive={isDragActive}
-									onUpload={() => {
-										if (!language)
-											return toast.error("Please select a language.");
-										if (!file) return toast.error("Please upload a file.");
-										uploadMutation.mutate({ file, language });
-									}}
-									onClearFile={() => setFile(null)}
-								/>
+								<UploadSection onProceed={handleProceed} />
 							</motion.div>
 
 							{showConsole && (
@@ -195,17 +102,24 @@ function Index() {
 										className="p-4 sm:p-6 flex flex-col h-[300px]"
 									>
 										<Console
-											message={getConsoleMessage()}
-											ocrResult={ocrResult}
-											fileUrl={fileUrl}
-											language={language}
-											isProcessing={isProcessing}
+											message={
+												executeMutation.isPending
+													? "Executing code..."
+													: consoleMessage
+											}
+											ocrResult={detectedCode?.code}
+											fileUrl={detectedCode?.fileUrl}
+											language={detectedCode?.language}
+											isProcessing={executeMutation.isPending}
 											onExecute={(code) => {
-												if (!language) {
-													toast.error("Please select a language");
+												if (!detectedCode?.language) {
+													toast.error("No programming language detected");
 													return;
 												}
-												executeMutation.mutate({ code, language });
+												executeMutation.mutate({
+													code,
+													language: detectedCode.language,
+												});
 											}}
 										/>
 									</motion.div>
@@ -213,29 +127,14 @@ function Index() {
 							)}
 						</>
 					) : (
-						// Desktop layout
+						// Desktop layout - side by side
 						<ResizablePanelGroup
 							direction="horizontal"
 							className="min-h-[400px] w-full rounded-lg"
 						>
 							<ResizablePanel defaultSize={50} minSize={30}>
 								<div className="flex h-full items-center justify-center p-6">
-									<UploadSection
-										language={language}
-										setLanguage={setLanguage}
-										file={file}
-										getRootProps={getRootProps}
-										getInputProps={getInputProps}
-										isProcessing={isProcessing}
-										isDragActive={isDragActive}
-										onUpload={() => {
-											if (!language)
-												return toast.error("Please select a language.");
-											if (!file) return toast.error("Please upload a file.");
-											uploadMutation.mutate({ file, language });
-										}}
-										onClearFile={() => setFile(null)}
-									/>
+									<UploadSection onProceed={handleProceed} />
 								</div>
 							</ResizablePanel>
 
@@ -245,17 +144,24 @@ function Index() {
 									<ResizablePanel defaultSize={50} minSize={30}>
 										<div className="flex h-full items-center justify-center p-6">
 											<Console
-												message={getConsoleMessage()}
-												ocrResult={ocrResult}
-												fileUrl={fileUrl}
-												language={language}
-												isProcessing={isProcessing}
+												message={
+													executeMutation.isPending
+														? "Executing code..."
+														: consoleMessage
+												}
+												ocrResult={detectedCode?.code}
+												fileUrl={detectedCode?.fileUrl}
+												language={detectedCode?.language}
+												isProcessing={executeMutation.isPending}
 												onExecute={(code) => {
-													if (!language) {
-														toast.error("Please select a language");
+													if (!detectedCode?.language) {
+														toast.error("No programming language detected");
 														return;
 													}
-													executeMutation.mutate({ code, language });
+													executeMutation.mutate({
+														code,
+														language: detectedCode.language,
+													});
 												}}
 											/>
 										</div>
