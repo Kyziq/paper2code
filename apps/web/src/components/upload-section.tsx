@@ -1,16 +1,18 @@
-import { FileText, Image, Info, Upload, X } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
+import { ArrowRight, FileText, Image, Info, Upload } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import type { DropzoneInputProps, DropzoneRootProps } from "react-dropzone";
+import { useState } from "react";
+import { useDropzone } from "react-dropzone";
+import { toast } from "sonner";
+import { detectLanguage, uploadFile } from "~/api";
+import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
-import { LoadingSpinner } from "~/components/ui/loading-spinner";
 import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "~/components/ui/select";
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "~/components/ui/popover";
 import {
 	Tooltip,
 	TooltipContent,
@@ -18,61 +20,30 @@ import {
 	TooltipTrigger,
 } from "~/components/ui/tooltip";
 import { isMobile } from "~/lib/utils";
-import { SUPPORTED_LANGUAGES, type SupportedLanguage } from "~shared/constants";
-import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import {
+	ACCEPTED_FILE_EXTENSIONS,
+	MAX_FILE_SIZES,
+	SUPPORTED_LANGUAGES,
+	type SupportedLanguage,
+	type SupportedMimeType,
+} from "~shared/constants";
+import type { FileUploadParams } from "~shared/types";
 
-// Types
-interface UploadSectionProps {
+// Type definitions
+interface DetectedCodeResult {
+	code: string;
+	fileUrl: string;
 	language: SupportedLanguage | null;
-	setLanguage: (language: SupportedLanguage) => void;
-	file: File | null;
-	getRootProps: <T extends DropzoneRootProps>(props?: T) => T;
-	getInputProps: <T extends DropzoneInputProps>(props?: T) => T;
-	isProcessing: boolean;
-	onUpload: () => void;
-	isDragActive?: boolean;
-	onClearFile?: () => void;
 }
 
-interface FileDetailsProps {
-	file: File;
-	onClear?: () => void;
+interface ImprovedUploadSectionProps {
+	onProceed: (result: DetectedCodeResult) => void;
 }
 
-// Animation variants
-const animations = {
-	fadeInUp: {
-		initial: { opacity: 0, y: 20 },
-		animate: { opacity: 1, y: 0 },
-		exit: { opacity: 0, y: -20 },
-		transition: { duration: 0.4, ease: "easeOut" },
-	},
-
-	pulse: {
-		animate: {
-			scale: [1, 1.02, 1],
-			opacity: [0.8, 1, 0.8],
-			transition: {
-				duration: 2,
-				repeat: Number.POSITIVE_INFINITY,
-				ease: "easeInOut",
-			},
-		},
-	},
-
-	iconPopIn: {
-		initial: { scale: 0, rotate: -180 },
-		animate: { scale: 1, rotate: 0 },
-		transition: {
-			type: "spring",
-			damping: 15,
-			stiffness: 200,
-			delay: 0.2,
-		},
-	},
+const formatFileSize = (bytes: number): string => {
+	return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 };
 
-// Utility functions
 const getFileIcon = (fileType: string) => {
 	if (fileType === "application/pdf") {
 		return <FileText className="h-8 w-8 text-blue-500 dark:text-blue-400" />;
@@ -83,167 +54,210 @@ const getFileIcon = (fileType: string) => {
 	return <FileText className="h-8 w-8 text-gray-500 dark:text-gray-400" />;
 };
 
-const formatFileSize = (bytes: number): string => {
-	return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+const dropzoneVariants = {
+	idle: {
+		backgroundColor: "rgba(255, 255, 255, 0)",
+		transition: { duration: 0.2 },
+	},
+	active: {
+		backgroundColor: "rgba(59, 130, 246, 0.1)",
+		scale: 1.02,
+		transition: { duration: 0.2 },
+	},
 };
 
-// Sub-components
-const FileDetails = ({ file, onClear }: FileDetailsProps) => (
-	<motion.div
-		initial={{ opacity: 0, y: 20, scale: 0.95 }}
-		animate={{ opacity: 1, y: 0, scale: 1 }}
-		exit={{ opacity: 0, y: -20, scale: 0.95 }}
-		transition={{ type: "spring", damping: 20, stiffness: 300 }}
-		className="relative overflow-hidden z-40 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-sm flex flex-col items-start justify-start p-4 w-full mx-auto rounded-lg shadow-lg border border-gray-200/50 dark:border-neutral-800/50"
-	>
-		<div className="flex justify-between w-full items-center gap-4">
-			<div className="flex items-center gap-3 flex-1 min-w-0">
-				<motion.div className="flex-shrink-0" {...animations.iconPopIn}>
-					{getFileIcon(file.type)}
-				</motion.div>
-				<div className="flex-1 min-w-0">
-					<motion.p
-						initial={{ opacity: 0, x: -20 }}
-						animate={{ opacity: 1, x: 0 }}
-						transition={{ delay: 0.3, duration: 0.4 }}
-						className="text-base font-medium text-neutral-700 dark:text-neutral-300 truncate"
-					>
-						{file.name}
-					</motion.p>
-					<motion.p
-						initial={{ opacity: 0, x: -20 }}
-						animate={{ opacity: 1, x: 0 }}
-						transition={{ delay: 0.4, duration: 0.4 }}
-						className="text-sm text-neutral-500 dark:text-neutral-400"
-					>
-						{formatFileSize(file.size)}
-					</motion.p>
-				</div>
-			</div>
+const uploaderVariants = {
+	hidden: {
+		opacity: 0,
+		y: 20,
+	},
+	visible: {
+		opacity: 1,
+		y: 0,
+		transition: {
+			duration: 0.3,
+			when: "beforeChildren",
+			staggerChildren: 0.1,
+		},
+	},
+	exit: {
+		opacity: 0,
+		y: -20,
+		transition: { duration: 0.2 },
+	},
+};
 
-			{onClear && (
-				<motion.div
-					initial={{ opacity: 0, scale: 0.5 }}
-					animate={{ opacity: 1, scale: 1 }}
-					whileHover={{ scale: 1.1 }}
-					whileTap={{ scale: 0.9 }}
-					transition={{ type: "spring", stiffness: 400, damping: 17 }}
-				>
-					<Button
-						variant="ghost"
-						size="icon"
-						className="h-8 w-8 rounded-full hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400"
-						onClick={onClear}
-					>
-						<X className="h-4 w-4" />
-					</Button>
-				</motion.div>
-			)}
-		</div>
-	</motion.div>
-);
+const iconVariants = {
+	hidden: {
+		scale: 0.5,
+		opacity: 0,
+	},
+	visible: {
+		scale: 1,
+		opacity: 1,
+		transition: {
+			type: "spring",
+			stiffness: 300,
+			damping: 20,
+		},
+	},
+};
 
-const DropzoneContent = ({
-	isDragActive,
-	file,
-	onClearFile,
-}: Pick<UploadSectionProps, "isDragActive" | "file" | "onClearFile">) => (
-	<AnimatePresence mode="wait">
-		<div className="relative z-10">
-			<div className="flex flex-col items-center justify-center min-h-[140px]">
-				{file ? (
-					<FileDetails file={file} onClear={onClearFile} />
-				) : (
-					<motion.div
-						initial={{ opacity: 0, scale: 0.9 }}
-						animate={{ opacity: 1, scale: 1 }}
-						exit={{ opacity: 0, scale: 0.9 }}
-						transition={{ duration: 0.4 }}
-						className="text-center relative z-10"
-					>
-						<motion.div
-							className="rounded-full bg-blue-50 dark:bg-blue-900/30 p-4 mx-auto mb-4 w-fit"
-							whileHover={{
-								scale: 1.05,
-								boxShadow: "0 0 20px rgba(59, 130, 246, 0.5)",
-							}}
-							whileTap={{ scale: 0.95 }}
-							{...animations.pulse}
-						>
-							<Upload className="h-8 w-8 text-blue-500 dark:text-blue-400" />
-						</motion.div>
+const textVariants = {
+	hidden: {
+		opacity: 0,
+		y: 10,
+	},
+	visible: {
+		opacity: 1,
+		y: 0,
+		transition: { duration: 0.2 },
+	},
+};
 
-						<AnimatePresence mode="wait">
-							{isDragActive ? (
-								<motion.div
-									key="drag-active"
-									initial={{ opacity: 0, y: 10, scale: 0.95 }}
-									animate={{ opacity: 1, y: 0, scale: 1 }}
-									exit={{ opacity: 0, y: -10, scale: 0.95 }}
-									transition={{ duration: 0.3 }}
-									className="text-lg font-medium text-blue-600 dark:text-blue-400"
-								>
-									Drop your file here
-								</motion.div>
-							) : (
-								<motion.div
-									key="drag-inactive"
-									initial={{ opacity: 0, y: 10 }}
-									animate={{ opacity: 1, y: 0 }}
-									exit={{ opacity: 0, y: -10 }}
-									transition={{ duration: 0.3 }}
-								>
-									<motion.div
-										initial={{ opacity: 0 }}
-										animate={{ opacity: 1 }}
-										transition={{ delay: 0.2 }}
-									>
-										<span className="text-blue-600 dark:text-blue-400 font-medium">
-											Upload a file
-										</span>
-										<span className="text-slate-600 dark:text-slate-400 ml-1">
-											or drag and drop
-										</span>
-									</motion.div>
-									<motion.p
-										className="text-sm text-slate-500"
-										initial={{ opacity: 0 }}
-										animate={{ opacity: 1 }}
-										transition={{ delay: 0.3 }}
-									>
-										PNG, JPG, JPEG, PDF up to 5MB
-									</motion.p>
-								</motion.div>
-							)}
-						</AnimatePresence>
-					</motion.div>
-				)}
-			</div>
-		</div>
-	</AnimatePresence>
-);
+export default function ImprovedUploadSection({
+	onProceed,
+}: ImprovedUploadSectionProps) {
+	const [file, setFile] = useState<File | null>(null);
+	const [isProcessing, setIsProcessing] = useState(false);
+	const isMobileDevice = isMobile();
 
-// Main component
-export const UploadSection = ({
-	language,
-	setLanguage,
-	file,
-	getRootProps,
-	getInputProps,
-	isProcessing,
-	onUpload,
-	isDragActive,
-	onClearFile,
-}: UploadSectionProps) => {
-	const getDropzoneClassName = (isDragActive: boolean) =>
+	// Upload and Language Detection Mutation
+	const uploadMutation = useMutation({
+		mutationFn: async ({ file }: FileUploadParams) => {
+			const uploadResult = await uploadFile({ file });
+			if (!uploadResult.data?.code) {
+				throw new Error("No code extracted from file");
+			}
+
+			// Detect language after successful upload
+			const languageResult = await detectLanguage(uploadResult.data.code);
+
+			return {
+				code: uploadResult.data.code,
+				fileUrl: uploadResult.data.fileUrl,
+				language: languageResult.data?.language ?? null,
+			};
+		},
+		onSuccess: (result) => {
+			if (!result.language) {
+				setFile(null); // Clear the file
+				toast.error("Unsupported programming language", {
+					description: "Currently supporting Python, C++, and Java only",
+				});
+				return;
+			}
+
+			// Language supported - show success
+			const langInfo = SUPPORTED_LANGUAGES.find(
+				(l) => l.value === result.language,
+			);
+			toast.success(
+				`Detected ${langInfo?.label || result.language.toUpperCase()} code`,
+				{ description: "Click 'Next' to run the code" },
+			);
+		},
+		onError: (error: Error) => {
+			toast.error("Processing failed", { description: error.message });
+			setFile(null);
+		},
+		onSettled: () => {
+			setIsProcessing(false);
+		},
+	});
+
+	// Dropzone configuration
+	const { getRootProps, getInputProps, isDragActive } = useDropzone({
+		onDrop: async (acceptedFiles) => {
+			const file = acceptedFiles[0];
+			if (!file) return;
+
+			// Check file size
+			const maxSize = MAX_FILE_SIZES[file.type as SupportedMimeType];
+			if (file.size > maxSize) {
+				const maxSizeMB = maxSize / (1024 * 1024);
+				toast.error(`File size exceeds ${maxSizeMB}MB limit`);
+				return;
+			}
+
+			setFile(file);
+			setIsProcessing(true);
+			uploadMutation.mutate({ file });
+		},
+		onDropRejected: (fileRejections) => {
+			const firstRejection = fileRejections[0];
+			const error = firstRejection?.errors[0];
+
+			if (error?.code === "file-invalid-type") {
+				toast.error("Invalid file type", {
+					description: `Please upload: ${Object.values(ACCEPTED_FILE_EXTENSIONS)
+						.flat()
+						.join(", ")}`,
+				});
+			} else {
+				toast.error("File upload rejected", {
+					description: error?.message || "Unknown error occurred",
+				});
+			}
+		},
+		accept: ACCEPTED_FILE_EXTENSIONS,
+		multiple: false,
+		disabled: isProcessing,
+	});
+
+	const getDropzoneClassName = (isDragActive: boolean): string =>
 		`p-6 block rounded-lg cursor-pointer w-full relative overflow-hidden border-2 border-dashed transition-colors duration-200 ${
 			isDragActive
 				? "border-blue-500 dark:border-blue-400 bg-blue-50/50 dark:bg-blue-900/20"
 				: "border-gray-200 dark:border-neutral-800 hover:border-blue-400 dark:hover:border-blue-500"
 		}`;
 
+	const InfoComponent = () => {
+		const content = (
+			<div className="space-y-2 text-sm">
+				<p>
+					<strong>Note:</strong>
+				</p>
+				<ul className="list-disc pl-4 space-y-1">
+					<li>User input during execution is not supported yet</li>
+					<li>Supported languages: Python, C++, and Java</li>
+				</ul>
+			</div>
+		);
+
+		if (isMobileDevice) {
+			return (
+				<Popover>
+					<PopoverTrigger>
+						<Info className="h-4 w-4 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300" />
+					</PopoverTrigger>
+					<PopoverContent className="w-[260px]">{content}</PopoverContent>
+				</Popover>
+			);
+		}
+
+		return (
+			<TooltipProvider>
+				<Tooltip>
+					<TooltipTrigger asChild>
+						<Info className="h-4 w-4 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 cursor-help" />
+					</TooltipTrigger>
+					<TooltipContent side="right" align="start" className="max-w-[260px]">
+						{content}
+					</TooltipContent>
+				</Tooltip>
+			</TooltipProvider>
+		);
+	};
+
+	const handleNext = () => {
+		if (uploadMutation.data) {
+			onProceed(uploadMutation.data);
+		}
+	};
+
 	return (
-		<div className="mx-auto w-full lg:max-w-xl">
+		<div className="mx-auto w-full max-w-xl">
 			{/* Header Section */}
 			<motion.div
 				initial={{ opacity: 0, y: 30 }}
@@ -254,118 +268,217 @@ export const UploadSection = ({
 					paper2code
 				</motion.h1>
 				<motion.p className="mb-6 text-slate-600 dark:text-slate-300">
-					Transform handwritten code into executable programs
+					Upload handwritten code and instantly convert it into executable
+					programs. Supporting Python, C++, and Java.
 				</motion.p>
 			</motion.div>
 
-			{/* Main Content */}
+			{/* Upload Section */}
 			<motion.div
 				className="space-y-4"
 				initial={{ opacity: 0 }}
 				animate={{ opacity: 1 }}
 				transition={{ duration: 0.5, delay: 0.3 }}
 			>
-				<div className="space-y-1.5 max-w-[180px]">
-					<Label htmlFor="language-select" className="text-sm font-medium">
-						Programming Language
-					</Label>
-					<Select
-						onValueChange={(value: SupportedLanguage) => setLanguage(value)}
-						value={language || undefined}
-					>
-						<SelectTrigger id="language-select">
-							<SelectValue placeholder="Select..." />
-						</SelectTrigger>
-						<SelectContent>
-							{SUPPORTED_LANGUAGES.map(({ value, label, icon }) => (
-								<SelectItem key={value} value={value}>
-									<div className="flex items-center gap-2">
-										<img src={icon} alt={`${label} icon`} className="w-5 h-5" />
-										{label}
-									</div>
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
-				</div>
-
 				<motion.div
 					className="space-y-1.5"
-					{...animations.fadeInUp}
+					initial={{ opacity: 0, y: 20 }}
+					animate={{ opacity: 1, y: 0 }}
 					transition={{ delay: 0.6 }}
 				>
 					<div className="flex items-center gap-2">
 						<Label className="text-sm font-medium">Handwritten Code File</Label>
-						{isMobile() ? (
-							<Popover>
-								<PopoverTrigger asChild>
-									<Info className="h-4 w-4 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300" />
-								</PopoverTrigger>
-								<PopoverContent className="w-[260px]">
-									<p className="text-sm">
-										Programs should include any required test data - user input
-										during execution is not supported yet.
-									</p>
-								</PopoverContent>
-							</Popover>
-						) : (
-							<TooltipProvider>
-								<Tooltip>
-									<TooltipTrigger asChild>
-										<Info className="h-4 w-4 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 cursor-help" />
-									</TooltipTrigger>
-									<TooltipContent
-										side="right"
-										align="start"
-										className="max-w-[260px]"
-									>
-										<p>
-											Programs should include any required test data - user
-											input during execution is not supported yet.
-										</p>
-									</TooltipContent>
-								</Tooltip>
-							</TooltipProvider>
-						)}
+						<InfoComponent />
 					</div>
 
 					<div {...getRootProps()}>
 						<motion.div
-							whileTap={{ scale: 0.995 }}
-							className={getDropzoneClassName(isDragActive || false)}
+							variants={dropzoneVariants}
+							animate={isDragActive ? "active" : "idle"}
+							className={getDropzoneClassName(isDragActive)}
 						>
 							<input {...getInputProps()} />
-							<DropzoneContent
-								isDragActive={isDragActive}
-								file={file}
-								onClearFile={onClearFile}
-							/>
+							<AnimatePresence mode="wait">
+								{file ? (
+									<motion.div
+										key="file-card"
+										initial={{ opacity: 0, scale: 0.9 }}
+										animate={{
+											opacity: 1,
+											scale: 1,
+											y: 0,
+											transition: {
+												type: "spring",
+												stiffness: 300,
+												damping: 25,
+											},
+										}}
+										exit={{
+											opacity: 0,
+											scale: 0.9,
+											transition: { duration: 0.2 },
+										}}
+										className="relative z-40 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-sm flex flex-col items-start justify-start p-4 w-full mx-auto rounded-lg shadow-lg border border-gray-200/50 dark:border-neutral-800/50"
+									>
+										{/* File card content */}
+										<div className="flex justify-between w-full items-center gap-4">
+											<div className="flex items-center gap-3 flex-1 min-w-0">
+												<motion.div
+													initial={{ scale: 0 }}
+													animate={{ scale: 1 }}
+													transition={{
+														type: "spring",
+														stiffness: 400,
+														damping: 20,
+													}}
+												>
+													{getFileIcon(file.type)}
+												</motion.div>
+												<div className="flex-1 min-w-0">
+													<motion.p
+														initial={{ opacity: 0, x: -20 }}
+														animate={{ opacity: 1, x: 0 }}
+														className="text-base font-medium text-neutral-700 dark:text-neutral-300 truncate"
+													>
+														{file.name}
+													</motion.p>
+													<motion.div
+														initial={{ opacity: 0 }}
+														animate={{ opacity: 1 }}
+														transition={{ delay: 0.1 }}
+														className="flex items-center gap-2 mt-1"
+													>
+														<p className="text-sm text-neutral-500 dark:text-neutral-400">
+															{formatFileSize(file.size)}
+														</p>
+														{uploadMutation.data?.language && (
+															<motion.div
+																initial={{ opacity: 0, scale: 0.8 }}
+																animate={{ opacity: 1, scale: 1 }}
+																transition={{
+																	type: "spring",
+																	stiffness: 400,
+																	damping: 20,
+																}}
+															>
+																<Badge
+																	variant={uploadMutation.data.language}
+																	showIcon={true}
+																	className="text-xs"
+																>
+																	{
+																		SUPPORTED_LANGUAGES.find(
+																			(l) =>
+																				l.value ===
+																				uploadMutation.data.language,
+																		)?.label
+																	}
+																</Badge>
+															</motion.div>
+														)}
+													</motion.div>
+												</div>
+											</div>
+
+											{isProcessing && (
+												<motion.div
+													initial={{ opacity: 0, scale: 0.8 }}
+													animate={{ opacity: 1, scale: 1 }}
+													className="flex items-center gap-2"
+												>
+													<div className="h-4 w-4 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+													<span className="text-sm text-blue-500">
+														Processing...
+													</span>
+												</motion.div>
+											)}
+										</div>
+									</motion.div>
+								) : (
+									<motion.div
+										key="upload-prompt"
+										variants={uploaderVariants}
+										initial="hidden"
+										animate="visible"
+										exit="exit"
+										className="text-center relative z-10"
+									>
+										<motion.div
+											variants={iconVariants}
+											className="rounded-full bg-blue-50 dark:bg-blue-900/30 p-4 mx-auto mb-4 w-fit"
+											whileHover={{
+												scale: 1.05,
+												boxShadow: "0 0 20px rgba(59, 130, 246, 0.3)",
+											}}
+											whileTap={{ scale: 0.95 }}
+										>
+											<Upload className="h-8 w-8 text-blue-500 dark:text-blue-400" />
+										</motion.div>
+
+										<AnimatePresence mode="wait">
+											{isDragActive ? (
+												<motion.div
+													key="drag-active"
+													variants={textVariants}
+													className="text-lg font-medium text-blue-600 dark:text-blue-400"
+												>
+													<motion.span
+														initial={{ opacity: 0, y: 10 }}
+														animate={{ opacity: 1, y: 0 }}
+														transition={{ duration: 0.2 }}
+													>
+														Drop your file here
+													</motion.span>
+												</motion.div>
+											) : (
+												<motion.div key="drag-inactive" variants={textVariants}>
+													<motion.span className="text-blue-600 dark:text-blue-400 font-medium">
+														Upload a file
+													</motion.span>
+													<motion.span className="text-slate-600 dark:text-slate-400 ml-1">
+														or drag and drop
+													</motion.span>
+													<motion.p
+														className="text-sm text-slate-500 mt-1"
+														initial={{ opacity: 0 }}
+														animate={{ opacity: 1 }}
+														transition={{ delay: 0.2 }}
+													>
+														PNG, JPG, JPEG, PDF up to 5MB
+													</motion.p>
+												</motion.div>
+											)}
+										</AnimatePresence>
+									</motion.div>
+								)}
+							</AnimatePresence>
 						</motion.div>
 					</div>
 				</motion.div>
 
-				<motion.div {...animations.fadeInUp} transition={{ delay: 0.7 }}>
+				{/* Next Button */}
+				<motion.div
+					initial={{ opacity: 0, y: 20 }}
+					animate={{ opacity: 1, y: 0 }}
+					transition={{ delay: 0.7 }}
+				>
 					<Button
-						onClick={onUpload}
-						disabled={isProcessing || !file || !language}
+						onClick={handleNext}
+						disabled={isProcessing || !file || !uploadMutation.data?.language}
 						className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 dark:from-blue-500 dark:to-indigo-500 dark:hover:from-blue-600 dark:hover:to-indigo-600 text-white transition-all duration-200"
 						size="lg"
 					>
-						{isProcessing ? (
-							<LoadingSpinner className="h-5 w-5 border-white border-t-transparent" />
-						) : (
-							<motion.div
-								className="flex items-center"
-								whileHover={{ scale: 1.02 }}
-								whileTap={{ scale: 0.98 }}
-							>
-								<Upload className="mr-2 h-4 w-4" />
-								Process
-							</motion.div>
-						)}
+						<motion.div
+							className="flex items-center justify-center gap-2"
+							whileHover={{ scale: 1.02 }}
+							whileTap={{ scale: 0.98 }}
+						>
+							Next
+							<ArrowRight className="h-4 w-4" />
+						</motion.div>
 					</Button>
 				</motion.div>
 			</motion.div>
 		</div>
 	);
-};
+}
