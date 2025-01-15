@@ -12,7 +12,6 @@ export interface ErrorResponse {
 // File Upload Related
 export interface FileUploadParams {
 	file: File;
-	language: string;
 }
 
 export interface FileUploadResponseData {
