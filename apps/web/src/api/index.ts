@@ -4,6 +4,7 @@ import type {
 	FileUploadParams,
 	FileUploadResponse,
 } from "~shared/types";
+import type { DetectLanguageResponse } from "~shared/types/detect-language";
 import type {
 	CodeEnhanceParams,
 	CodeEnhanceResponse,
@@ -12,10 +13,9 @@ import type {
 export const uploadFile = async (
 	params: FileUploadParams,
 ): Promise<FileUploadResponse> => {
-	const { file, language } = params;
+	const { file } = params;
 	const formData = new FormData();
 	formData.append("file", file);
-	formData.append("language", language);
 
 	try {
 		return await kyInstance
@@ -63,5 +63,22 @@ export const enhanceCode = async (
 			throw new Error(error.message);
 		}
 		throw new Error("An unknown error occurred during code enhancement");
+	}
+};
+
+export const detectLanguage = async (
+	code: string,
+): Promise<DetectLanguageResponse> => {
+	try {
+		return await kyInstance
+			.post("detect-language", {
+				json: { code },
+			})
+			.json<DetectLanguageResponse>();
+	} catch (error) {
+		if (error instanceof Error) {
+			throw new Error(error.message);
+		}
+		throw new Error("An unknown error occurred during language detection");
 	}
 };
