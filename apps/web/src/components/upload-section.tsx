@@ -190,9 +190,7 @@ export default function ImprovedUploadSection({
 
 			if (error?.code === "file-invalid-type") {
 				toast.error("Invalid file type", {
-					description: `Please upload: ${Object.values(ACCEPTED_FILE_EXTENSIONS)
-						.flat()
-						.join(", ")}`,
+					description: `Please upload: ${Object.values(ACCEPTED_FILE_EXTENSIONS).flat().join(", ")}`,
 				});
 			} else {
 				toast.error("File upload rejected", {
@@ -366,13 +364,10 @@ export default function ImprovedUploadSection({
 																	showIcon={true}
 																	className="text-xs"
 																>
-																	{
-																		SUPPORTED_LANGUAGES.find(
-																			(l) =>
-																				l.value ===
-																				uploadMutation.data.language,
-																		)?.label
-																	}
+																	{SUPPORTED_LANGUAGES.find(
+																		(l) =>
+																			l.value === uploadMutation.data.language,
+																	)?.label.toUpperCase()}
 																</Badge>
 															</motion.div>
 														)}
