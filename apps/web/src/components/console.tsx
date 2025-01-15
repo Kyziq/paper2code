@@ -403,22 +403,6 @@ export const Console = ({
 								Console Output
 							</span>
 						</div>
-
-						{language && (
-							<motion.div
-								initial={{ opacity: 0, scale: 0.8 }}
-								animate={{ opacity: 1, scale: 1 }}
-								transition={{ type: "spring", duration: 0.5 }}
-							>
-								<Badge
-									variant={language}
-									showIcon={true}
-									className="flex items-center gap-1.5 px-2 py-0.5 text-xs hover:scale-105 transition-transform"
-								>
-									{language.toUpperCase()}
-								</Badge>
-							</motion.div>
-						)}
 					</div>
 
 					<motion.div
