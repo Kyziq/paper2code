@@ -18,8 +18,6 @@ export async function processImage(fileName: string): Promise<string> {
 		}
 
 		const text = result.fullTextAnnotation.text.trim();
-		logger.ocr(`OCR completed for image: ${fileName}`);
-		logger.ocr(`Detected text: \n${text}`);
 		logger.detailedOCR(result.fullTextAnnotation, "image");
 
 		return text;

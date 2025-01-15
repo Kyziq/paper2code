@@ -96,8 +96,6 @@ export async function processPDF(fileName: string): Promise<string> {
 
 		// Extract text from the output files
 		const extractedText = await extractTextFromOutput(outputPrefix);
-		logger.ocr(`OCR completed for PDF: ${fileName}`);
-		logger.ocr(`Detected text: \n${extractedText}`);
 
 		// Log detailed OCR results after showing extracted text
 		const result = await downloadAndParseOutput(outputPrefix);
