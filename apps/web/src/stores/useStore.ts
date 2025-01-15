@@ -3,12 +3,12 @@ import type { SupportedLanguage } from "~shared/constants";
 
 interface Store {
 	file: File | null;
-	language: SupportedLanguage | null;
+	detectedLanguage: SupportedLanguage | null;
 	consoleMessage: string;
 	ocrResult: string;
 	fileUrl?: string;
 	setFile: (file: File | null) => void;
-	setLanguage: (language: SupportedLanguage | null) => void;
+	setDetectedLanguage: (language: SupportedLanguage | null) => void;
 	setConsoleMessage: (consoleMessage: string) => void;
 	setOcrResult: (result: string) => void;
 	setFileUrl: (url: string) => void;
@@ -16,12 +16,12 @@ interface Store {
 
 export const useStore = create<Store>()((set) => ({
 	file: null,
-	language: null,
+	detectedLanguage: null,
 	consoleMessage: "",
 	ocrResult: "",
 	fileUrl: "",
 	setFile: (file) => set({ file }),
-	setLanguage: (language) => set({ language }),
+	setDetectedLanguage: (detectedLanguage) => set({ detectedLanguage }),
 	setConsoleMessage: (consoleMessage) => set({ consoleMessage }),
 	setOcrResult: (ocrResult) => set({ ocrResult }),
 	setFileUrl: (fileUrl) => set({ fileUrl }),
