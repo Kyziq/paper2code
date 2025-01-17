@@ -90,11 +90,9 @@ describe("Code Execution Tests", () => {
 	// Test Case 6: Multiple Print Statements
 	test("should process multiple print statements", async () => {
 		// Arrange
-		const code = `
-			print("Line 1")
-			print("Line 2")
-			print("Line 3")
-		`;
+		const code = `print("Line 1")
+print("Line 2")
+print("Line 3")`;
 		const language = "python" as SupportedLanguage;
 
 		// Act
