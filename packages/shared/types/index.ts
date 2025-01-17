@@ -16,7 +16,6 @@ export interface FileUploadParams {
 
 export interface FileUploadResponseData {
 	code: string;
-	language: string;
 	fileUrl: string; // GCS file URL
 }
 
