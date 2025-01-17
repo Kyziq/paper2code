@@ -1,6 +1,7 @@
 import { cors } from "@elysiajs/cors";
 import { Elysia } from "elysia";
 import {
+	authRoute,
 	detectLanguageRoute,
 	enhanceRoute,
 	executeRoute,
@@ -11,6 +12,7 @@ import { logger } from "~/utils/logger";
 
 export const app = new Elysia()
 	.use(cors())
+	.use(authRoute)
 	.use(ocrRoute)
 	.use(executeRoute)
 	.use(enhanceRoute)
