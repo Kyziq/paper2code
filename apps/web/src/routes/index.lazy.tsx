@@ -10,7 +10,7 @@ import {
 	ResizablePanel,
 	ResizablePanelGroup,
 } from "~/components/ui/resizable";
-import UploadSection from "~/components/upload-section";
+import { UploadSection } from "~/components/upload-section";
 import { isMobile } from "~/lib/utils";
 import type { SupportedLanguage } from "~shared/constants";
 import type { FileExecutionParams } from "~shared/types";

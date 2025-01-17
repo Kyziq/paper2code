@@ -36,7 +36,7 @@ interface DetectedCodeResult {
 	language: SupportedLanguage | null;
 }
 
-interface ImprovedUploadSectionProps {
+interface UploadSectionProps {
 	onProceed: (result: DetectedCodeResult) => void;
 }
 
@@ -56,11 +56,9 @@ const getFileIcon = (fileType: string) => {
 
 const dropzoneVariants = {
 	idle: {
-		backgroundColor: "rgba(255, 255, 255, 0)",
 		transition: { duration: 0.2 },
 	},
 	active: {
-		backgroundColor: "rgba(59, 130, 246, 0.1)",
 		scale: 1.02,
 		transition: { duration: 0.2 },
 	},
@@ -115,9 +113,7 @@ const textVariants = {
 	},
 };
 
-export default function ImprovedUploadSection({
-	onProceed,
-}: ImprovedUploadSectionProps) {
+export function UploadSection({ onProceed }: UploadSectionProps) {
 	const [file, setFile] = useState<File | null>(null);
 	const [isProcessing, setIsProcessing] = useState(false);
 	const isMobileDevice = isMobile();
@@ -206,8 +202,8 @@ export default function ImprovedUploadSection({
 	const getDropzoneClassName = (isDragActive: boolean): string =>
 		`p-6 block rounded-lg cursor-pointer w-full relative overflow-hidden border-2 border-dashed transition-colors duration-200 ${
 			isDragActive
-				? "border-blue-500 dark:border-blue-400 bg-blue-50/50 dark:bg-blue-900/20"
-				: "border-gray-200 dark:border-neutral-800 hover:border-blue-400 dark:hover:border-blue-500"
+				? "border-blue-500 dark:border-blue-400 bg-blue-50/50 dark:bg-blue-500/10"
+				: "border-gray-200 dark:border-neutral-800 hover:border-blue-400 dark:hover:border-blue-500 bg-white/50 dark:bg-neutral-900/50 hover:bg-blue-50/50 dark:hover:bg-blue-950/50"
 		}`;
 
 	const InfoComponent = () => {
