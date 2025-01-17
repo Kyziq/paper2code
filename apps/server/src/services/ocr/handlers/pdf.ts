@@ -1,47 +1,35 @@
 import { protos } from "@google-cloud/vision";
-import { gcpConfig, s3Client, visionClient } from "~/config/gcp.config";
+import { gcpConfig, storageClient, visionClient } from "~/config/gcp.config";
 import { logger } from "~/utils/logger";
 
-async function deleteOutputFiles(outputPrefix: string): Promise<void> {
+async function deleteGCSOutputFiles(outputPrefix: string): Promise<void> {
 	try {
-		// List and delete both possible output files
-		const filePattern1 = `${outputPrefix}/output-0-to-0.json`;
-		const filePattern2 = `${outputPrefix}/output-1-to-1.json`;
-
-		await Promise.all([
-			s3Client.delete(filePattern1).catch(() => {}),
-			s3Client.delete(filePattern2).catch(() => {}),
-		]);
-
+		const bucket = storageClient.bucket(gcpConfig.bucket.name);
+		const [files] = await bucket.getFiles({ prefix: outputPrefix });
+		await Promise.all(files.map((file) => file.delete()));
 		logger.delete(`Deleted output files with prefix: ${outputPrefix}`);
 	} catch (error) {
 		logger.error(`Failed to clean up output files: ${error}`);
 	}
 }
-
 async function downloadAndParseOutput(
 	outputPrefix: string,
 ): Promise<protos.google.cloud.vision.v1.IAnnotateFileResponse | null> {
+	const bucket = storageClient.bucket(gcpConfig.bucket.name);
 	const possiblePaths = [
 		`${outputPrefix}/output-0-to-0.json`, // For single-page PDFs
 		`${outputPrefix}/output-1-to-1.json`, // For multi-page PDFs
 	];
 
 	for (const path of possiblePaths) {
-		try {
-			const s3File = s3Client.file(path);
-			const exists = await s3File.exists();
-
-			if (exists) {
-				logger.info(`Found output file: ${path}`);
-				const content = await s3File.text();
-				return JSON.parse(content);
-			}
-		} catch (error) {
-			logger.error(`Error checking/downloading ${path}: ${error}`);
+		const file = bucket.file(path);
+		const [exists] = await file.exists();
+		if (exists) {
+			logger.info(`Found output file: ${path}`);
+			const [content] = await file.download();
+			return JSON.parse(content.toString());
 		}
 	}
-
 	return null;
 }
 
@@ -64,11 +52,9 @@ export async function processPDF(fileName: string): Promise<string> {
 	logger.ocr(`Starting OCR process for PDF: ${fileName}`);
 
 	try {
-		// Construct GCS URIs
 		const gcsSourceUri = `gs://${gcpConfig.bucket.name}/${fileName}`;
 		const gcsDestinationUri = `gs://${gcpConfig.bucket.name}/${outputPrefix}/`;
 
-		// Create Vision API request
 		const request: protos.google.cloud.vision.v1.IAsyncBatchAnnotateFilesRequest =
 			{
 				requests: [
@@ -94,22 +80,24 @@ export async function processPDF(fileName: string): Promise<string> {
 				],
 			};
 
-		// Start the OCR operation
+		// Start the operation
 		const [operation] = await visionClient.asyncBatchAnnotateFiles(request);
+
+		// Wait for operation to complete
 		const [filesResponse] = await operation.promise();
 
 		if (!filesResponse?.responses?.[0]?.outputConfig?.gcsDestination?.uri) {
 			throw new Error("Invalid response from Vision API");
 		}
 
-		// Get the JSON results
+		// Get the JSON results from GCS
 		const jsonUri = filesResponse.responses[0].outputConfig.gcsDestination.uri;
 		logger.ocr(`PDF processing complete. JSON result saved to: ${jsonUri}`);
 
 		// Extract text from the output files
 		const extractedText = await extractTextFromOutput(outputPrefix);
 
-		// Log detailed OCR results
+		// Log detailed OCR results after showing extracted text
 		const result = await downloadAndParseOutput(outputPrefix);
 		if (result) {
 			logger.detailedOCR(result, "pdf");
@@ -120,6 +108,6 @@ export async function processPDF(fileName: string): Promise<string> {
 		throw new Error(`Failed to perform OCR on PDF ${fileName}: ${error}`);
 	} finally {
 		// Always cleanup output files
-		await deleteOutputFiles(outputPrefix);
+		await deleteGCSOutputFiles(outputPrefix);
 	}
 }

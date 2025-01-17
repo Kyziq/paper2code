@@ -1,6 +1,10 @@
-import { gcpConfig } from "~/config/gcp.config";
 import { logger } from "~/utils/logger";
-import { getPublicUrl, uploadFile } from "~/utils/storage";
+import {
+	createBucketIfNotExists,
+	deleteGCSFile,
+	getPublicUrl,
+	uploadGCSFile,
+} from "~/utils/storage";
 import type { SupportedLanguage } from "~shared/constants";
 import { processImage } from "./handlers/image";
 import { processPDF } from "./handlers/pdf";
@@ -63,13 +67,10 @@ export async function processOCR(
 		};
 	}
 
-	// Log GCS bucket info
-	logger.info(
-		`Using GCS bucket: ${gcpConfig.bucket.name} (${gcpConfig.bucket.storageClass} in ${gcpConfig.bucket.region})`,
-	);
+	await createBucketIfNotExists();
 
 	// Upload file and get unique filename
-	const { uniqueFileName } = await uploadFile(file);
+	const { uniqueFileName } = await uploadGCSFile(file);
 
 	// Get the public URL for the uploaded file
 	const fileUrl = await getPublicUrl(uniqueFileName);

@@ -1,10 +1,32 @@
-import { gcpConfig, s3Client } from "~/config/gcp.config";
+import { gcpConfig, storageClient } from "~/config/gcp.config";
 import { logger } from "./logger";
 
-export async function uploadFile(
+export async function createBucketIfNotExists(): Promise<void> {
+	const { name, location, storageClass } = gcpConfig.bucket;
+
+	logger.info(`Checking if bucket ${name} exists`);
+	try {
+		const [bucketExists] = await storageClient.bucket(name).exists();
+		if (!bucketExists) {
+			logger.info(`Bucket ${name} does not exist. Creating...`);
+			const [bucket] = await storageClient.createBucket(name, {
+				location,
+				[storageClass]: true,
+			});
+			logger.success(
+				`Bucket ${bucket.name} created with ${storageClass} class in ${location}`,
+			);
+		}
+	} catch (error) {
+		logger.error(`Error creating/checking bucket: ${error}`);
+		throw error;
+	}
+}
+
+export async function uploadGCSFile(
 	file: File,
 ): Promise<{ uniqueFileName: string }> {
-	// Generate unique filename with timestamp
+	// Generate unique file name
 	const ext = file.name.split(".").pop();
 	const date = new Date();
 
@@ -23,53 +45,23 @@ export async function uploadFile(
 
 	const uniqueFileName = `${formattedDate}_${formattedTime}_${milliseconds}.${ext}`;
 
-	// Upload file to bucket
-	const s3File = s3Client.file(uniqueFileName);
+	const bucket = storageClient.bucket(gcpConfig.bucket.name);
+	const blob = bucket.file(uniqueFileName);
+	const buffer = Buffer.from(await file.arrayBuffer());
 
-	try {
-		if (file.size > 5 * 1024 * 1024) {
-			// 5MB - use streaming for large files
-			const writer = s3File.writer({
-				type: file.type,
-				acl: "public-read",
-				// Optimize for large files
-				partSize: 5 * 1024 * 1024, // 5MB chunks
-				queueSize: 4, // Parallel uploads
-				retry: 3, // Auto-retry on network errors
-			});
+	await blob.save(buffer, { contentType: file.type });
+	logger.success(
+		`File uploaded to bucket: ${uniqueFileName} (original: ${file.name})`,
+	);
 
-			const stream = file.stream();
-			const reader = stream.getReader();
-
-			while (true) {
-				const { done, value } = await reader.read();
-				if (done) break;
-				await writer.write(value);
-			}
-
-			await writer.end();
-		} else {
-			// For smaller files, use simple write
-			await s3File.write(file, {
-				type: file.type,
-				acl: "public-read",
-			});
-		}
-
-		logger.success(
-			`File uploaded to bucket: ${uniqueFileName} (original: ${file.name})`,
-		);
-		return { uniqueFileName };
-	} catch (error) {
-		logger.error(`Failed to upload file to bucket: ${error}`);
-		throw error;
-	}
+	return { uniqueFileName };
 }
 
+// TODO: Delete the file from GCS bucket when no longer needed, maybe need to add session
 export async function deleteGCSFile(fileName: string): Promise<void> {
 	try {
-		const s3File = s3Client.file(fileName);
-		await s3File.delete();
+		const bucket = storageClient.bucket(gcpConfig.bucket.name);
+		await bucket.file(fileName).delete();
 		logger.delete(`File deleted from bucket: ${fileName}`);
 	} catch (error) {
 		logger.error(`Failed to delete file from bucket: ${error}`);
@@ -78,20 +70,12 @@ export async function deleteGCSFile(fileName: string): Promise<void> {
 }
 
 export async function getPublicUrl(fileName: string): Promise<string> {
-	const { name } = gcpConfig.bucket;
+	const bucket = storageClient.bucket(gcpConfig.bucket.name);
+	const file = bucket.file(fileName);
 
-	try {
-		// First check if the file exists
-		const s3File = s3Client.file(fileName);
-		const exists = await s3File.exists();
-		if (!exists) {
-			throw new Error(`File not found in bucket: ${fileName}`);
-		}
+	// Make the file publicly readable
+	await file.makePublic();
 
-		// Return direct public URL
-		return `https://storage.googleapis.com/${name}/${fileName}`;
-	} catch (error) {
-		logger.error(`Failed to generate public URL for ${fileName}: ${error}`);
-		throw error;
-	}
+	// Get the public URL
+	return `https://storage.googleapis.com/${gcpConfig.bucket.name}/${fileName}`;
 }
