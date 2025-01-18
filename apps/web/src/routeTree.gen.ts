@@ -15,7 +15,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { Route as rootRoute } from './routes/__root'
 import { Route as AuthImport } from './routes/_auth'
 import { Route as AuthAppIndexImport } from './routes/_auth/app/index'
-import { Route as AuthAppProfileIndexImport } from './routes/_auth/app/profile/index'
+import { Route as AuthAppAppHistoryImport } from './routes/_auth/app/_app.history'
 
 // Create Virtual Routes
 
@@ -40,9 +40,9 @@ const AuthAppIndexRoute = AuthAppIndexImport.update({
   getParentRoute: () => AuthRoute,
 } as any)
 
-const AuthAppProfileIndexRoute = AuthAppProfileIndexImport.update({
-  id: '/app/profile/',
-  path: '/app/profile/',
+const AuthAppAppHistoryRoute = AuthAppAppHistoryImport.update({
+  id: '/app/_app/history',
+  path: '/app/history',
   getParentRoute: () => AuthRoute,
 } as any)
 
@@ -71,11 +71,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthAppIndexImport
       parentRoute: typeof AuthImport
     }
-    '/_auth/app/profile/': {
-      id: '/_auth/app/profile/'
-      path: '/app/profile'
-      fullPath: '/app/profile'
-      preLoaderRoute: typeof AuthAppProfileIndexImport
+    '/_auth/app/_app/history': {
+      id: '/_auth/app/_app/history'
+      path: '/app/history'
+      fullPath: '/app/history'
+      preLoaderRoute: typeof AuthAppAppHistoryImport
       parentRoute: typeof AuthImport
     }
   }
@@ -85,12 +85,12 @@ declare module '@tanstack/react-router' {
 
 interface AuthRouteChildren {
   AuthAppIndexRoute: typeof AuthAppIndexRoute
-  AuthAppProfileIndexRoute: typeof AuthAppProfileIndexRoute
+  AuthAppAppHistoryRoute: typeof AuthAppAppHistoryRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
   AuthAppIndexRoute: AuthAppIndexRoute,
-  AuthAppProfileIndexRoute: AuthAppProfileIndexRoute,
+  AuthAppAppHistoryRoute: AuthAppAppHistoryRoute,
 }
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
@@ -99,14 +99,14 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexLazyRoute
   '': typeof AuthRouteWithChildren
   '/app': typeof AuthAppIndexRoute
-  '/app/profile': typeof AuthAppProfileIndexRoute
+  '/app/history': typeof AuthAppAppHistoryRoute
 }
 
 export interface FileRoutesByTo {
   '/': typeof IndexLazyRoute
   '': typeof AuthRouteWithChildren
   '/app': typeof AuthAppIndexRoute
-  '/app/profile': typeof AuthAppProfileIndexRoute
+  '/app/history': typeof AuthAppAppHistoryRoute
 }
 
 export interface FileRoutesById {
@@ -114,15 +114,15 @@ export interface FileRoutesById {
   '/': typeof IndexLazyRoute
   '/_auth': typeof AuthRouteWithChildren
   '/_auth/app/': typeof AuthAppIndexRoute
-  '/_auth/app/profile/': typeof AuthAppProfileIndexRoute
+  '/_auth/app/_app/history': typeof AuthAppAppHistoryRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '' | '/app' | '/app/profile'
+  fullPaths: '/' | '' | '/app' | '/app/history'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '' | '/app' | '/app/profile'
-  id: '__root__' | '/' | '/_auth' | '/_auth/app/' | '/_auth/app/profile/'
+  to: '/' | '' | '/app' | '/app/history'
+  id: '__root__' | '/' | '/_auth' | '/_auth/app/' | '/_auth/app/_app/history'
   fileRoutesById: FileRoutesById
 }
 
@@ -157,15 +157,15 @@ export const routeTree = rootRoute
       "filePath": "_auth.tsx",
       "children": [
         "/_auth/app/",
-        "/_auth/app/profile/"
+        "/_auth/app/_app/history"
       ]
     },
     "/_auth/app/": {
       "filePath": "_auth/app/index.tsx",
       "parent": "/_auth"
     },
-    "/_auth/app/profile/": {
-      "filePath": "_auth/app/profile/index.tsx",
+    "/_auth/app/_app/history": {
+      "filePath": "_auth/app/_app.history.tsx",
       "parent": "/_auth"
     }
   }

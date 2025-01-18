@@ -16,7 +16,7 @@ import {
 	DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 
-import { LogOut, User } from "lucide-react";
+import { History, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import { useAuthStore } from "~/stores/useAuthStore";
 import type { GoogleUser } from "~shared/types/auth";
@@ -48,6 +48,9 @@ function RootComponent() {
 	return (
 		<ThemeProvider>
 			<div className="min-h-screen flex flex-col">
+				{/* Main background - subtle gradient */}
+				<div className="fixed inset-0 bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-950 dark:to-blue-950 -z-10" />
+
 				{/* Header */}
 				<header className="relative bg-gradient-to-r from-slate-900 via-blue-900 to-slate-900 dark:from-slate-800 dark:via-blue-800 dark:to-slate-800 shadow-lg">
 					<div className="absolute inset-0 bg-gradient-to-b from-white/[0.03] to-transparent" />
@@ -93,16 +96,12 @@ function RootComponent() {
 												</div>
 											</DropdownMenuLabel>
 											<DropdownMenuSeparator />
-											<Link to="/app/profile">
+											<Link to="/app/history">
 												<DropdownMenuItem className="cursor-pointer">
-													<User className="mr-2 h-4 w-4" />
-													Profile
+													<History className="mr-2 h-4 w-4" />
+													History
 												</DropdownMenuItem>
 											</Link>
-											{/* <DropdownMenuItem className="cursor-pointer">
-												<Settings className="mr-2 h-4 w-4" />
-												Settings
-											</DropdownMenuItem> */}
 											<DropdownMenuSeparator />
 											<DropdownMenuItem
 												className="cursor-pointer text-red-600 dark:text-red-400 focus:text-red-700 dark:focus:text-red-300"
