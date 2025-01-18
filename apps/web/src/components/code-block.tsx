@@ -38,6 +38,10 @@ export function CodeBlock({ code, language, maxHeight }: CodeBlockProps) {
 						"&": {
 							backgroundColor: "transparent !important",
 						},
+						".cm-content": {
+							fontFamily: '"CaskaydiaCove Nerd Font", monospace !important',
+							fontSize: "14px !important",
+						},
 						".cm-gutters": {
 							backgroundColor: "transparent !important",
 							border: "none !important",
@@ -64,7 +68,7 @@ export function CodeBlock({ code, language, maxHeight }: CodeBlockProps) {
 					extensions={extensions}
 					editable={false}
 					basicSetup={{
-						lineNumbers: true,
+						lineNumbers: false,
 						highlightActiveLineGutter: false,
 						highlightSpecialChars: false,
 						history: false,
