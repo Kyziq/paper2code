@@ -13,6 +13,9 @@ import { createFileRoute } from '@tanstack/react-router'
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
+import { Route as AuthImport } from './routes/_auth'
+import { Route as AuthAppIndexImport } from './routes/_auth/app/index'
+import { Route as AuthAppProfileIndexImport } from './routes/_auth/app/profile/index'
 
 // Create Virtual Routes
 
@@ -20,11 +23,28 @@ const IndexLazyImport = createFileRoute('/')()
 
 // Create/Update Routes
 
+const AuthRoute = AuthImport.update({
+  id: '/_auth',
+  getParentRoute: () => rootRoute,
+} as any)
+
 const IndexLazyRoute = IndexLazyImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRoute,
 } as any).lazy(() => import('./routes/index.lazy').then((d) => d.Route))
+
+const AuthAppIndexRoute = AuthAppIndexImport.update({
+  id: '/app/',
+  path: '/app/',
+  getParentRoute: () => AuthRoute,
+} as any)
+
+const AuthAppProfileIndexRoute = AuthAppProfileIndexImport.update({
+  id: '/app/profile/',
+  path: '/app/profile/',
+  getParentRoute: () => AuthRoute,
+} as any)
 
 // Populate the FileRoutesByPath interface
 
@@ -37,39 +57,83 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexLazyImport
       parentRoute: typeof rootRoute
     }
+    '/_auth': {
+      id: '/_auth'
+      path: ''
+      fullPath: ''
+      preLoaderRoute: typeof AuthImport
+      parentRoute: typeof rootRoute
+    }
+    '/_auth/app/': {
+      id: '/_auth/app/'
+      path: '/app'
+      fullPath: '/app'
+      preLoaderRoute: typeof AuthAppIndexImport
+      parentRoute: typeof AuthImport
+    }
+    '/_auth/app/profile/': {
+      id: '/_auth/app/profile/'
+      path: '/app/profile'
+      fullPath: '/app/profile'
+      preLoaderRoute: typeof AuthAppProfileIndexImport
+      parentRoute: typeof AuthImport
+    }
   }
 }
 
 // Create and export the route tree
 
+interface AuthRouteChildren {
+  AuthAppIndexRoute: typeof AuthAppIndexRoute
+  AuthAppProfileIndexRoute: typeof AuthAppProfileIndexRoute
+}
+
+const AuthRouteChildren: AuthRouteChildren = {
+  AuthAppIndexRoute: AuthAppIndexRoute,
+  AuthAppProfileIndexRoute: AuthAppProfileIndexRoute,
+}
+
+const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
+
 export interface FileRoutesByFullPath {
   '/': typeof IndexLazyRoute
+  '': typeof AuthRouteWithChildren
+  '/app': typeof AuthAppIndexRoute
+  '/app/profile': typeof AuthAppProfileIndexRoute
 }
 
 export interface FileRoutesByTo {
   '/': typeof IndexLazyRoute
+  '': typeof AuthRouteWithChildren
+  '/app': typeof AuthAppIndexRoute
+  '/app/profile': typeof AuthAppProfileIndexRoute
 }
 
 export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexLazyRoute
+  '/_auth': typeof AuthRouteWithChildren
+  '/_auth/app/': typeof AuthAppIndexRoute
+  '/_auth/app/profile/': typeof AuthAppProfileIndexRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '' | '/app' | '/app/profile'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '' | '/app' | '/app/profile'
+  id: '__root__' | '/' | '/_auth' | '/_auth/app/' | '/_auth/app/profile/'
   fileRoutesById: FileRoutesById
 }
 
 export interface RootRouteChildren {
   IndexLazyRoute: typeof IndexLazyRoute
+  AuthRoute: typeof AuthRouteWithChildren
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexLazyRoute: IndexLazyRoute,
+  AuthRoute: AuthRouteWithChildren,
 }
 
 export const routeTree = rootRoute
@@ -82,11 +146,27 @@ export const routeTree = rootRoute
     "__root__": {
       "filePath": "__root.tsx",
       "children": [
-        "/"
+        "/",
+        "/_auth"
       ]
     },
     "/": {
       "filePath": "index.lazy.tsx"
+    },
+    "/_auth": {
+      "filePath": "_auth.tsx",
+      "children": [
+        "/_auth/app/",
+        "/_auth/app/profile/"
+      ]
+    },
+    "/_auth/app/": {
+      "filePath": "_auth/app/index.tsx",
+      "parent": "/_auth"
+    },
+    "/_auth/app/profile/": {
+      "filePath": "_auth/app/profile/index.tsx",
+      "parent": "/_auth"
     }
   }
 }
