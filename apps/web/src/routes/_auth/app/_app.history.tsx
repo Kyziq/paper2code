@@ -5,7 +5,6 @@ import {
 	Calendar,
 	CheckCircle2,
 	Clock,
-	Code,
 	Copy,
 	ExternalLink,
 	EyeOff,
@@ -187,7 +186,6 @@ function HistoryComponent() {
 								key={item.id}
 								initial={{ opacity: 0, y: 20 }}
 								animate={{ opacity: 1, y: 0 }}
-								exit={{ opacity: 0, y: -20 }}
 								transition={{ delay: index * 0.1 }}
 								className="group border rounded-lg p-4 bg-card hover:shadow-md transition-all duration-300"
 							>
@@ -276,10 +274,7 @@ function HistoryComponent() {
 
 								{/* Code Preview */}
 								<div className="relative">
-									<div className="absolute left-3 top-3">
-										<Code className="h-4 w-4 text-muted-foreground" />
-									</div>
-									<pre className="p-4 pl-9 bg-muted rounded-md overflow-x-auto">
+									<pre className="p-4 bg-muted rounded-md overflow-x-auto">
 										<CodeBlock
 											code={item.code}
 											language={item.language}
@@ -295,16 +290,16 @@ function HistoryComponent() {
 
 			{/* Details Dialog */}
 			<Dialog open={!!selectedItem} onOpenChange={() => setSelectedItem(null)}>
-				<DialogContent className="max-w-4xl h-[80vh]">
-					<DialogHeader>
+				<DialogContent className="max-w-4xl h-[80vh] p-0">
+					<DialogHeader className="p-6 pb-0">
 						<DialogTitle>Execution Details</DialogTitle>
 					</DialogHeader>
 
-					<ScrollArea className="h-full pr-4">
+					<ScrollArea className="h-[calc(80vh-4rem)] px-6 pb-6">
 						{selectedItem && (
 							<div className="space-y-6">
 								{/* Meta Information */}
-								<div className="grid grid-cols-2 gap-4">
+								<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 									<div className="space-y-1">
 										<div className="text-sm font-medium text-muted-foreground">
 											Language
@@ -355,7 +350,7 @@ function HistoryComponent() {
 
 								{/* Original File Preview */}
 								{selectedItem.fileUrl && (
-									<div className="space-y-2">
+									<div className="space-y-2 overflow-hidden">
 										<div className="flex items-center justify-between">
 											<div className="text-sm font-medium text-muted-foreground">
 												Original File
@@ -371,7 +366,7 @@ function HistoryComponent() {
 												Open in new tab
 											</Button>
 										</div>
-										<div className="border rounded-lg overflow-hidden h-[200px]">
+										<div className="border rounded-lg h-[200px] overflow-hidden">
 											{selectedItem.fileUrl.toLowerCase().endsWith(".pdf") ? (
 												<iframe
 													src={selectedItem.fileUrl}
@@ -404,16 +399,11 @@ function HistoryComponent() {
 											Copy code
 										</Button>
 									</div>
-									<div className="relative">
-										<div className="absolute left-3 top-3">
-											<Code className="h-4 w-4 text-muted-foreground" />
-										</div>
-										<pre className="p-4 pl-9 bg-muted rounded-md overflow-x-auto">
-											<CodeBlock
-												code={selectedItem.code}
-												language={selectedItem.language}
-											/>
-										</pre>
+									<div className="p-4 bg-muted rounded-md overflow-x-auto">
+										<CodeBlock
+											code={selectedItem.code}
+											language={selectedItem.language}
+										/>
 									</div>
 								</div>
 
@@ -422,7 +412,7 @@ function HistoryComponent() {
 									<div className="text-sm font-medium text-muted-foreground">
 										Execution Output
 									</div>
-									<div className="p-4 bg-muted/50 rounded-md">
+									<div className="p-4 bg-muted/50 rounded-md overflow-x-auto">
 										<pre className="text-sm whitespace-pre-wrap font-mono">
 											{selectedItem.output}
 										</pre>
