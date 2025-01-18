@@ -3,48 +3,41 @@ name: paper2code
 services:
 
   db:
-      image: postgres:17
-      container_name: paper2code_db
-      env_file:
-        - ./apps/server/.env
-      environment:
-        - POSTGRES_DB=${POSTGRES_DB}
-        - POSTGRES_USER=${POSTGRES_USER}
-        - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      volumes:
-        - type: volume
-          source: postgres_data
-          target: /var/lib/postgresql/data
-      restart: unless-stopped
-      networks:
-        - paper2code_network
+    image: postgres:17
+    container_name: paper2code_db
+    env_file:
+      - apps/server/.env
+    volumes:
+      - type: volume
+        source: postgres_data
+        target: /var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - paper2code_network
 
   web:
+    container_name: paper2code_web
     build:
       context: .
       dockerfile: apps/web/Dockerfile
     ports:
       - "5173:5173"
     env_file:
-      - ./apps/web/.env
+      - apps/web/.env
     depends_on:
       - server
     networks:
       - paper2code_network
 
   server:
+    container_name: paper2code_server
     build:
       context: .
       dockerfile: apps/server/Dockerfile
     ports:
       - "3000:3000"
     env_file:
-      - ./apps/server/.env
-    environment:
-      - DATABASE_URL=${DATABASE_URL}
-      - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - apps/server/.env
     volumes:
       - ./apps/server/.env:/app/apps/server/.env
       - ./credentials:/app/credentials
@@ -58,30 +51,30 @@ services:
       - paper2code_network
 
   cpp_runner:
-    build:
-      context: ./apps/server
-      dockerfile: Dockerfile.cpp
     container_name: cpp_script_runner
+    build:
+      context: apps/server
+      dockerfile: Dockerfile.cpp
     init: true
     restart: unless-stopped
     networks:
       - paper2code_network
 
   java_runner:
-    build:
-      context: ./apps/server
-      dockerfile: Dockerfile.java
     container_name: java_script_runner
+    build:
+      context: apps/server
+      dockerfile: Dockerfile.java
     init: true
     restart: unless-stopped
     networks:
       - paper2code_network
 
   python_runner:
+
     build:
-      context: ./apps/server
+      context: apps/server
       dockerfile: Dockerfile.python
-    container_name: python_script_runner
     init: true
     restart: unless-stopped
     networks:
