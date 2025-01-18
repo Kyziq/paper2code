@@ -83,7 +83,7 @@ export function GoogleAuthButton() {
 			setUser(user);
 
 			toast.success("Successfully signed in!", {
-				description: `Welcome back, ${user.name}!`,
+				description: `Hi ${user.name}!`,
 			});
 		} catch (error) {
 			console.error("Authentication error:", error);
