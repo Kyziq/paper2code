@@ -6,7 +6,6 @@ export interface GoogleUser {
 	email: string;
 	name: string;
 	picture: string;
-	locale: string;
 }
 
 // Request/Response types

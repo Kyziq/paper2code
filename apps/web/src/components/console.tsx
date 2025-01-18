@@ -1,3 +1,4 @@
+import { useMutation } from "@tanstack/react-query";
 import { EditorView, type Extension } from "@uiw/react-codemirror";
 import {
 	Eye,
@@ -11,6 +12,8 @@ import {
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { saveSnippet } from "~/api/snippets";
+import { createUser } from "~/api/users";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {
@@ -21,6 +24,7 @@ import {
 } from "~/components/ui/dialog";
 import { Toggle } from "~/components/ui/toggle";
 import { isMobile } from "~/lib/utils";
+import { useAuthStore } from "~/stores/useAuthStore";
 import type { SupportedLanguage } from "~shared/constants";
 import { CodeEditorWrapper } from "./code-editor-wrapper";
 
@@ -70,7 +74,8 @@ export const Console = ({
 		EditorView.lineWrapping,
 	]);
 	const [isLoadingLanguage, setIsLoadingLanguage] = useState(false);
-	const [isSaving, setIsSaving] = useState(false);
+
+	const { user } = useAuthStore();
 
 	// Handle language support loading
 	useEffect(() => {
@@ -148,22 +153,45 @@ export const Console = ({
 		setEditableCode(ocrResult || "");
 	};
 
+	// Save mutations
+	const createUserMutation = useMutation({
+		mutationFn: createUser,
+	});
+
+	const saveSnippetMutation = useMutation({
+		mutationFn: saveSnippet,
+	});
+
+	// Save handler
 	const handleSave = async () => {
-		if (!language || !ocrResult) {
-			toast.error("Missing code or language");
+		if (!language || !ocrResult || !user?.id) {
+			toast.error("Missing required data");
 			return;
 		}
 
-		setIsSaving(true);
 		try {
-			// TODO: implement the actual save API call later
-			await new Promise((resolve) => setTimeout(resolve, 1000)); // Mock API call
+			// First ensure user exists in our database
+			await createUserMutation.mutateAsync({
+				id: user.id,
+				email: user.email,
+				name: user.name,
+				picture: user.picture,
+			});
+
+			// Then save the snippet
+			await saveSnippetMutation.mutateAsync({
+				userId: user.id,
+				language,
+				code: editableCode || ocrResult,
+				output: message,
+				success: !message.toLowerCase().includes("error"),
+				fileUrl,
+			});
+
 			toast.success("Code execution saved successfully");
 		} catch (error) {
 			toast.error("Failed to save code execution");
 			console.error("Save error:", error);
-		} finally {
-			setIsSaving(false);
 		}
 	};
 
@@ -197,6 +225,8 @@ export const Console = ({
 		);
 	};
 
+	const isSaving =
+		createUserMutation.isPending || saveSnippetMutation.isPending;
 	const isMobileDevice = isMobile();
 
 	const renderMobileDialog = () => (
@@ -453,7 +483,7 @@ export const Console = ({
 									: "bg-zinc-700/50 hover:bg-zinc-700 hover:shadow-lg"
 							}`}
 							onClick={handleSave}
-							disabled={isProcessing || isSaving || !message}
+							disabled={isProcessing || isSaving || !message || !user}
 						>
 							{isSaving ? (
 								<Loader2 className="h-4 w-4 animate-spin" />

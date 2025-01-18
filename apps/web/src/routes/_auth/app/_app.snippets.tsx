@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import React, { useState } from "react";
 import { toast } from "sonner";
+import { getUserSnippets } from "~/api/snippets";
 import { CodeBlock } from "~/components/code-block";
 import SnippetsSkeleton from "~/components/skeleton/snippets";
 import { Badge } from "~/components/ui/badge";
@@ -32,17 +33,8 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "~/components/ui/tooltip";
-
-// Types
-interface Snippet {
-	id: string;
-	language: "python" | "cpp" | "java";
-	timestamp: string;
-	code: string;
-	output: string;
-	fileUrl?: string;
-	success: boolean;
-}
+import { useAuthStore } from "~/stores/useAuthStore";
+import type { CodeSnippet } from "~shared/types/snippets";
 
 export const Route = createFileRoute("/_auth/app/_app/snippets")({
 	component: SnippetsComponent,
@@ -51,63 +43,34 @@ export const Route = createFileRoute("/_auth/app/_app/snippets")({
 function SnippetsComponent() {
 	// State
 	const [searchQuery, setSearchQuery] = useState("");
-	const [selectedSnippet, setSelectedSnippet] = useState<Snippet | null>(null);
-
-	// Mock data
-	const mockSnippets: Snippet[] = [
-		{
-			id: "1",
-			language: "python",
-			timestamp: "2024-01-18T10:30:00",
-			code: "def fibonacci(n):\n    if n <= 1:\n        return n\n    return fibonacci(n-1) + fibonacci(n-2)\n\nprint(fibonacci(10))",
-			output: "55",
-			success: true,
-			fileUrl: "https://example.com/fib.png",
-		},
-		{
-			id: "2",
-			language: "cpp",
-			timestamp: "2024-01-18T09:15:00",
-			code: '#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << "Hello World";\n    return 0;\n}',
-			output: "Hello World",
-			success: true,
-		},
-		{
-			id: "3",
-			language: "java",
-			timestamp: "2024-01-17T15:45:00",
-			code: 'public class Main {\n    public static void main(String[] args) {\n        System.out.println("Error example");\n        int x = 1 / 0;\n    }\n}',
-			output:
-				'Exception in thread "main" java.lang.ArithmeticException: / by zero\n\tat Main.main(Main.java:4)',
-			success: false,
-		},
-		{
-			id: "4",
-			language: "python",
-			timestamp: "2024-01-17T14:20:00",
-			code: 'for i in range(5):\n    print(f"Number: {i}")',
-			output: "Number: 0\nNumber: 1\nNumber: 2\nNumber: 3\nNumber: 4",
-			success: true,
-		},
-	];
+	const [selectedSnippet, setSelectedSnippet] = useState<CodeSnippet | null>(
+		null,
+	);
+	const { user } = useAuthStore();
 
 	// Query snippets data
-	const { data: snippets, isLoading } = useQuery<Snippet[]>({
-		queryKey: ["snippets"],
-		queryFn: async () => {
-			await new Promise((resolve) => setTimeout(resolve, 1500));
-			return mockSnippets;
+	const {
+		data: snippetsResponse,
+		isLoading,
+		error,
+	} = useQuery({
+		queryKey: ["snippets", user?.id],
+		queryFn: () => {
+			if (!user?.id) throw new Error("User not authenticated");
+			return getUserSnippets(user.id);
 		},
+		enabled: !!user?.id,
 	});
+
+	const snippets = snippetsResponse?.data ?? [];
 
 	// Filter snippets
 	const filteredSnippets = React.useMemo(() => {
 		if (!snippets) return [];
-
 		if (!searchQuery) return snippets;
 
+		const searchLower = searchQuery.toLowerCase();
 		return snippets.filter((snippet) => {
-			const searchLower = searchQuery.toLowerCase();
 			return (
 				snippet.code.toLowerCase().includes(searchLower) ||
 				snippet.output.toLowerCase().includes(searchLower)
@@ -120,6 +83,25 @@ function SnippetsComponent() {
 		navigator.clipboard.writeText(code);
 		toast("Code copied to clipboard");
 	};
+
+	// Error state
+	if (error) {
+		return (
+			<div className="container mx-auto p-6 max-w-6xl">
+				<div className="flex items-center justify-center h-[50vh] flex-col gap-4">
+					<div className="text-destructive">
+						<XCircle className="h-12 w-12" />
+					</div>
+					<h3 className="text-lg font-medium">Failed to load snippets</h3>
+					<p className="text-sm text-muted-foreground">
+						{error instanceof Error
+							? error.message
+							: "An unexpected error occurred"}
+					</p>
+				</div>
+			</div>
+		);
+	}
 
 	// Loading state
 	if (isLoading) {
@@ -160,7 +142,9 @@ function SnippetsComponent() {
 							No snippets found
 						</h3>
 						<p className="text-sm text-muted-foreground/80">
-							Save your code executions to build your snippet collection
+							{searchQuery
+								? "Try adjusting your search terms"
+								: "Save your code executions to build your snippet collection"}
 						</p>
 					</div>
 				) : (
@@ -195,9 +179,9 @@ function SnippetsComponent() {
 										</div>
 										<div className="flex items-center text-sm text-muted-foreground">
 											<Calendar className="mr-1.5 h-4 w-4" />
-											{new Date(item.timestamp).toLocaleDateString()}
+											{new Date(item.createdAt).toLocaleDateString()}
 											<Clock className="ml-3 mr-1.5 h-4 w-4" />
-											{new Date(item.timestamp).toLocaleTimeString()}
+											{new Date(item.createdAt).toLocaleTimeString()}
 										</div>
 									</div>
 
@@ -318,7 +302,7 @@ function SnippetsComponent() {
 										</div>
 										<div className="flex items-center text-sm">
 											<Calendar className="mr-1.5 h-4 w-4" />
-											{new Date(selectedSnippet.timestamp).toLocaleDateString()}
+											{new Date(selectedSnippet.createdAt).toLocaleDateString()}
 										</div>
 									</div>
 									<div className="space-y-1">
@@ -327,7 +311,7 @@ function SnippetsComponent() {
 										</div>
 										<div className="flex items-center text-sm">
 											<Clock className="mr-1.5 h-4 w-4" />
-											{new Date(selectedSnippet.timestamp).toLocaleTimeString()}
+											{new Date(selectedSnippet.createdAt).toLocaleTimeString()}
 										</div>
 									</div>
 								</div>
@@ -399,7 +383,7 @@ function SnippetsComponent() {
 										Execution Output
 									</div>
 									<div className="p-4 bg-muted/50 rounded-md overflow-x-auto">
-										<pre className="text-sm whitespace-pre-wrap font-mono">
+										<pre className="text-sm whitespace-pre-wrap font-caskaydiaCoveNerd">
 											{selectedSnippet.output}
 										</pre>
 									</div>
