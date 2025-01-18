@@ -16,7 +16,7 @@ import {
 	DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 
-import { History, LogOut } from "lucide-react";
+import { CodeSquare, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import { useAuthStore } from "~/stores/useAuthStore";
 import type { GoogleUser } from "~shared/types/auth";
@@ -96,10 +96,10 @@ function RootComponent() {
 												</div>
 											</DropdownMenuLabel>
 											<DropdownMenuSeparator />
-											<Link to="/app/history">
+											<Link to="/app/snippets">
 												<DropdownMenuItem className="cursor-pointer">
-													<History className="mr-2 h-4 w-4" />
-													History
+													<CodeSquare className="mr-2 h-4 w-4" />
+													Code Snippets
 												</DropdownMenuItem>
 											</Link>
 											<DropdownMenuSeparator />

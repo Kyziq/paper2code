@@ -15,7 +15,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { Route as rootRoute } from './routes/__root'
 import { Route as AuthImport } from './routes/_auth'
 import { Route as AuthAppIndexImport } from './routes/_auth/app/index'
-import { Route as AuthAppAppHistoryImport } from './routes/_auth/app/_app.history'
+import { Route as AuthAppAppSnippetsImport } from './routes/_auth/app/_app.snippets'
 
 // Create Virtual Routes
 
@@ -40,9 +40,9 @@ const AuthAppIndexRoute = AuthAppIndexImport.update({
   getParentRoute: () => AuthRoute,
 } as any)
 
-const AuthAppAppHistoryRoute = AuthAppAppHistoryImport.update({
-  id: '/app/_app/history',
-  path: '/app/history',
+const AuthAppAppSnippetsRoute = AuthAppAppSnippetsImport.update({
+  id: '/app/_app/snippets',
+  path: '/app/snippets',
   getParentRoute: () => AuthRoute,
 } as any)
 
@@ -71,11 +71,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthAppIndexImport
       parentRoute: typeof AuthImport
     }
-    '/_auth/app/_app/history': {
-      id: '/_auth/app/_app/history'
-      path: '/app/history'
-      fullPath: '/app/history'
-      preLoaderRoute: typeof AuthAppAppHistoryImport
+    '/_auth/app/_app/snippets': {
+      id: '/_auth/app/_app/snippets'
+      path: '/app/snippets'
+      fullPath: '/app/snippets'
+      preLoaderRoute: typeof AuthAppAppSnippetsImport
       parentRoute: typeof AuthImport
     }
   }
@@ -85,12 +85,12 @@ declare module '@tanstack/react-router' {
 
 interface AuthRouteChildren {
   AuthAppIndexRoute: typeof AuthAppIndexRoute
-  AuthAppAppHistoryRoute: typeof AuthAppAppHistoryRoute
+  AuthAppAppSnippetsRoute: typeof AuthAppAppSnippetsRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
   AuthAppIndexRoute: AuthAppIndexRoute,
-  AuthAppAppHistoryRoute: AuthAppAppHistoryRoute,
+  AuthAppAppSnippetsRoute: AuthAppAppSnippetsRoute,
 }
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
@@ -99,14 +99,14 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexLazyRoute
   '': typeof AuthRouteWithChildren
   '/app': typeof AuthAppIndexRoute
-  '/app/history': typeof AuthAppAppHistoryRoute
+  '/app/snippets': typeof AuthAppAppSnippetsRoute
 }
 
 export interface FileRoutesByTo {
   '/': typeof IndexLazyRoute
   '': typeof AuthRouteWithChildren
   '/app': typeof AuthAppIndexRoute
-  '/app/history': typeof AuthAppAppHistoryRoute
+  '/app/snippets': typeof AuthAppAppSnippetsRoute
 }
 
 export interface FileRoutesById {
@@ -114,15 +114,15 @@ export interface FileRoutesById {
   '/': typeof IndexLazyRoute
   '/_auth': typeof AuthRouteWithChildren
   '/_auth/app/': typeof AuthAppIndexRoute
-  '/_auth/app/_app/history': typeof AuthAppAppHistoryRoute
+  '/_auth/app/_app/snippets': typeof AuthAppAppSnippetsRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '' | '/app' | '/app/history'
+  fullPaths: '/' | '' | '/app' | '/app/snippets'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '' | '/app' | '/app/history'
-  id: '__root__' | '/' | '/_auth' | '/_auth/app/' | '/_auth/app/_app/history'
+  to: '/' | '' | '/app' | '/app/snippets'
+  id: '__root__' | '/' | '/_auth' | '/_auth/app/' | '/_auth/app/_app/snippets'
   fileRoutesById: FileRoutesById
 }
 
@@ -157,15 +157,15 @@ export const routeTree = rootRoute
       "filePath": "_auth.tsx",
       "children": [
         "/_auth/app/",
-        "/_auth/app/_app/history"
+        "/_auth/app/_app/snippets"
       ]
     },
     "/_auth/app/": {
       "filePath": "_auth/app/index.tsx",
       "parent": "/_auth"
     },
-    "/_auth/app/_app/history": {
-      "filePath": "_auth/app/_app.history.tsx",
+    "/_auth/app/_app/snippets": {
+      "filePath": "_auth/app/_app.snippets.tsx",
       "parent": "/_auth"
     }
   }

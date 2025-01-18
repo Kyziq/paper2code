@@ -5,9 +5,9 @@ import {
 	Calendar,
 	CheckCircle2,
 	Clock,
+	CodeSquare,
 	Copy,
 	ExternalLink,
-	EyeOff,
 	Search,
 	Terminal,
 	XCircle,
@@ -15,7 +15,7 @@ import {
 import React, { useState } from "react";
 import { toast } from "sonner";
 import { CodeBlock } from "~/components/code-block";
-import HistorySkeleton from "~/components/skeleton/history";
+import SnippetsSkeleton from "~/components/skeleton/snippets";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {
@@ -34,7 +34,7 @@ import {
 } from "~/components/ui/tooltip";
 
 // Types
-interface HistoryItem {
+interface Snippet {
 	id: string;
 	language: "python" | "cpp" | "java";
 	timestamp: string;
@@ -44,17 +44,17 @@ interface HistoryItem {
 	success: boolean;
 }
 
-export const Route = createFileRoute("/_auth/app/_app/history")({
-	component: HistoryComponent,
+export const Route = createFileRoute("/_auth/app/_app/snippets")({
+	component: SnippetsComponent,
 });
 
-function HistoryComponent() {
+function SnippetsComponent() {
 	// State
 	const [searchQuery, setSearchQuery] = useState("");
-	const [selectedItem, setSelectedItem] = useState<HistoryItem | null>(null);
+	const [selectedSnippet, setSelectedSnippet] = useState<Snippet | null>(null);
 
 	// Mock data
-	const mockHistory: HistoryItem[] = [
+	const mockSnippets: Snippet[] = [
 		{
 			id: "1",
 			language: "python",
@@ -91,29 +91,29 @@ function HistoryComponent() {
 		},
 	];
 
-	// Query history data
-	const { data: history, isLoading } = useQuery<HistoryItem[]>({
-		queryKey: ["history"],
+	// Query snippets data
+	const { data: snippets, isLoading } = useQuery<Snippet[]>({
+		queryKey: ["snippets"],
 		queryFn: async () => {
 			await new Promise((resolve) => setTimeout(resolve, 1500));
-			return mockHistory;
+			return mockSnippets;
 		},
 	});
 
-	// Filter history items
-	const filteredHistory = React.useMemo(() => {
-		if (!history) return [];
+	// Filter snippets
+	const filteredSnippets = React.useMemo(() => {
+		if (!snippets) return [];
 
-		if (!searchQuery) return history;
+		if (!searchQuery) return snippets;
 
-		return history.filter((item) => {
+		return snippets.filter((snippet) => {
 			const searchLower = searchQuery.toLowerCase();
 			return (
-				item.code.toLowerCase().includes(searchLower) ||
-				item.output.toLowerCase().includes(searchLower)
+				snippet.code.toLowerCase().includes(searchLower) ||
+				snippet.output.toLowerCase().includes(searchLower)
 			);
 		});
-	}, [history, searchQuery]);
+	}, [snippets, searchQuery]);
 
 	// Handlers
 	const handleCopyCode = (code: string) => {
@@ -123,7 +123,7 @@ function HistoryComponent() {
 
 	// Loading state
 	if (isLoading) {
-		return <HistorySkeleton />;
+		return <SnippetsSkeleton />;
 	}
 
 	return (
@@ -132,10 +132,10 @@ function HistoryComponent() {
 			<div className="flex flex-col space-y-4 md:flex-row md:justify-between md:items-center mb-8">
 				<div>
 					<h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-						Code History
+						Code Snippets
 					</h1>
 					<p className="text-muted-foreground mt-1">
-						View and manage your past code executions
+						Your saved code collection
 					</p>
 				</div>
 
@@ -151,21 +151,21 @@ function HistoryComponent() {
 				</div>
 			</div>
 
-			{/* History List */}
+			{/* Snippets List */}
 			<AnimatePresence mode="popLayout">
-				{filteredHistory.length === 0 ? (
+				{filteredSnippets.length === 0 ? (
 					<div className="text-center py-12">
-						<EyeOff className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+						<CodeSquare className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
 						<h3 className="text-lg font-medium text-muted-foreground mb-1">
-							No executions found
+							No snippets found
 						</h3>
 						<p className="text-sm text-muted-foreground/80">
-							Try adjusting your search query
+							Save your code executions to build your snippet collection
 						</p>
 					</div>
 				) : (
 					<div className="space-y-4">
-						{filteredHistory.map((item) => (
+						{filteredSnippets.map((item) => (
 							<div
 								key={item.id}
 								className="group border rounded-lg p-4 bg-card hover:shadow-md transition-all duration-300"
@@ -223,7 +223,7 @@ function HistoryComponent() {
 													<Button
 														variant="ghost"
 														size="sm"
-														onClick={() => setSelectedItem(item)}
+														onClick={() => setSelectedSnippet(item)}
 													>
 														<Terminal className="h-4 w-4" />
 													</Button>
@@ -270,14 +270,17 @@ function HistoryComponent() {
 			</AnimatePresence>
 
 			{/* Details Dialog */}
-			<Dialog open={!!selectedItem} onOpenChange={() => setSelectedItem(null)}>
+			<Dialog
+				open={!!selectedSnippet}
+				onOpenChange={() => setSelectedSnippet(null)}
+			>
 				<DialogContent className="max-w-4xl h-[80vh] p-0">
 					<DialogHeader className="p-6 pb-0">
-						<DialogTitle>Execution Details</DialogTitle>
+						<DialogTitle>Snippet Details</DialogTitle>
 					</DialogHeader>
 
 					<ScrollArea className="h-[calc(80vh-4rem)] px-6 pb-6">
-						{selectedItem && (
+						{selectedSnippet && (
 							<div className="space-y-6">
 								{/* Meta Information */}
 								<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -286,18 +289,18 @@ function HistoryComponent() {
 											Language
 										</div>
 										<Badge
-											variant={selectedItem.language}
+											variant={selectedSnippet.language}
 											className="text-xs"
 											showIcon
 										>
-											{selectedItem.language.toUpperCase()}
+											{selectedSnippet.language.toUpperCase()}
 										</Badge>
 									</div>
 									<div className="space-y-1">
 										<div className="text-sm font-medium text-muted-foreground">
 											Status
 										</div>
-										{selectedItem.success ? (
+										{selectedSnippet.success ? (
 											<Badge variant="success" className="text-xs">
 												<CheckCircle2 className="mr-1 h-3 w-3" />
 												Success
@@ -315,7 +318,7 @@ function HistoryComponent() {
 										</div>
 										<div className="flex items-center text-sm">
 											<Calendar className="mr-1.5 h-4 w-4" />
-											{new Date(selectedItem.timestamp).toLocaleDateString()}
+											{new Date(selectedSnippet.timestamp).toLocaleDateString()}
 										</div>
 									</div>
 									<div className="space-y-1">
@@ -324,13 +327,13 @@ function HistoryComponent() {
 										</div>
 										<div className="flex items-center text-sm">
 											<Clock className="mr-1.5 h-4 w-4" />
-											{new Date(selectedItem.timestamp).toLocaleTimeString()}
+											{new Date(selectedSnippet.timestamp).toLocaleTimeString()}
 										</div>
 									</div>
 								</div>
 
 								{/* Original File Preview */}
-								{selectedItem.fileUrl && (
+								{selectedSnippet.fileUrl && (
 									<div className="space-y-2 overflow-hidden">
 										<div className="flex items-center justify-between">
 											<div className="text-sm font-medium text-muted-foreground">
@@ -340,7 +343,7 @@ function HistoryComponent() {
 												variant="ghost"
 												size="sm"
 												onClick={() =>
-													window.open(selectedItem.fileUrl, "_blank")
+													window.open(selectedSnippet.fileUrl, "_blank")
 												}
 											>
 												<ExternalLink className="h-4 w-4 mr-1.5" />
@@ -348,15 +351,17 @@ function HistoryComponent() {
 											</Button>
 										</div>
 										<div className="border rounded-lg h-[200px] overflow-hidden">
-											{selectedItem.fileUrl.toLowerCase().endsWith(".pdf") ? (
+											{selectedSnippet.fileUrl
+												.toLowerCase()
+												.endsWith(".pdf") ? (
 												<iframe
-													src={selectedItem.fileUrl}
+													src={selectedSnippet.fileUrl}
 													className="w-full h-full"
 													title="Original PDF"
 												/>
 											) : (
 												<img
-													src={selectedItem.fileUrl}
+													src={selectedSnippet.fileUrl}
 													alt="Original file"
 													className="w-full h-full object-contain bg-muted/30"
 												/>
@@ -374,7 +379,7 @@ function HistoryComponent() {
 										<Button
 											variant="ghost"
 											size="sm"
-											onClick={() => handleCopyCode(selectedItem.code)}
+											onClick={() => handleCopyCode(selectedSnippet.code)}
 										>
 											<Copy className="h-4 w-4 mr-1.5" />
 											Copy code
@@ -382,8 +387,8 @@ function HistoryComponent() {
 									</div>
 									<div className="p-4 bg-muted rounded-md overflow-x-auto">
 										<CodeBlock
-											code={selectedItem.code}
-											language={selectedItem.language}
+											code={selectedSnippet.code}
+											language={selectedSnippet.language}
 										/>
 									</div>
 								</div>
@@ -395,7 +400,7 @@ function HistoryComponent() {
 									</div>
 									<div className="p-4 bg-muted/50 rounded-md overflow-x-auto">
 										<pre className="text-sm whitespace-pre-wrap font-mono">
-											{selectedItem.output}
+											{selectedSnippet.output}
 										</pre>
 									</div>
 								</div>

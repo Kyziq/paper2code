@@ -2,7 +2,7 @@ import { motion } from "motion/react";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 import { Skeleton } from "~/components/ui/skeleton";
 
-export default function HistorySkeleton() {
+export default function SnippetsSkeleton() {
 	return (
 		<div className="container mx-auto p-6 max-w-6xl">
 			{/* Header Section */}
@@ -14,7 +14,7 @@ export default function HistorySkeleton() {
 				<Skeleton className="h-10 w-full md:w-[300px]" />
 			</div>
 
-			{/* History List */}
+			{/* Saved List */}
 			<div className="space-y-4">
 				{[1, 2, 3].map((index) => (
 					<Card key={index} className="relative overflow-hidden">
