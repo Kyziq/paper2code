@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
 import {
 	Calendar,
 	CheckCircle2,
@@ -8,7 +8,6 @@ import {
 	Copy,
 	ExternalLink,
 	EyeOff,
-	Loader2,
 	Search,
 	Terminal,
 	XCircle,
@@ -16,6 +15,7 @@ import {
 import React, { useState } from "react";
 import { toast } from "sonner";
 import { CodeBlock } from "~/components/code-block";
+import HistorySkeleton from "~/components/skeleton/history";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {
@@ -123,24 +123,13 @@ function HistoryComponent() {
 
 	// Loading state
 	if (isLoading) {
-		return (
-			<div className="flex h-[80vh] items-center justify-center">
-				<div className="text-center">
-					<Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-500" />
-					<p className="text-muted-foreground">Loading code history...</p>
-				</div>
-			</div>
-		);
+		return <HistorySkeleton />;
 	}
 
 	return (
 		<div className="container mx-auto p-6 max-w-6xl">
 			{/* Header Section */}
-			<motion.div
-				initial={{ opacity: 0, y: -20 }}
-				animate={{ opacity: 1, y: 0 }}
-				className="flex flex-col space-y-4 md:flex-row md:justify-between md:items-center mb-8"
-			>
+			<div className="flex flex-col space-y-4 md:flex-row md:justify-between md:items-center mb-8">
 				<div>
 					<h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
 						Code History
@@ -160,17 +149,12 @@ function HistoryComponent() {
 						onChange={(e) => setSearchQuery(e.target.value)}
 					/>
 				</div>
-			</motion.div>
+			</div>
 
 			{/* History List */}
 			<AnimatePresence mode="popLayout">
 				{filteredHistory.length === 0 ? (
-					<motion.div
-						initial={{ opacity: 0, y: 20 }}
-						animate={{ opacity: 1, y: 0 }}
-						exit={{ opacity: 0, y: -20 }}
-						className="text-center py-12"
-					>
+					<div className="text-center py-12">
 						<EyeOff className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
 						<h3 className="text-lg font-medium text-muted-foreground mb-1">
 							No executions found
@@ -178,15 +162,12 @@ function HistoryComponent() {
 						<p className="text-sm text-muted-foreground/80">
 							Try adjusting your search query
 						</p>
-					</motion.div>
+					</div>
 				) : (
 					<div className="space-y-4">
-						{filteredHistory.map((item, index) => (
-							<motion.div
+						{filteredHistory.map((item) => (
+							<div
 								key={item.id}
-								initial={{ opacity: 0, y: 20 }}
-								animate={{ opacity: 1, y: 0 }}
-								transition={{ delay: index * 0.1 }}
 								className="group border rounded-lg p-4 bg-card hover:shadow-md transition-all duration-300"
 							>
 								{/* Header */}
@@ -282,7 +263,7 @@ function HistoryComponent() {
 										/>
 									</pre>
 								</div>
-							</motion.div>
+							</div>
 						))}
 					</div>
 				)}
