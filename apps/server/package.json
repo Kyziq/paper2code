@@ -4,15 +4,24 @@
 	"scripts": {
 		"dev": "bun run --watch src/index.ts",
 		"postdev": "docker compose down -v --remove-orphans",
-		"test": "bun test --preload ./tests/setup.ts"
+		"test": "bun test --preload ./tests/setup.ts",
+		"db:generate": "bunx drizzle-kit generate",
+		"db:push": "bunx drizzle-kit push",
+		"db:studio": "bunx drizzle-kit studio"
 	},
 	"dependencies": {
 		"@elysiajs/cors": "^1.1.1",
 		"@google-cloud/storage": "^7.14.0",
 		"@google-cloud/vision": "^4.3.2",
+		"drizzle-orm": "^0.38.4",
 		"elysia": "latest",
 		"google-auth-library": "^9.15.0",
 		"groq-sdk": "^0.11.0",
+		"pg": "^8.13.1",
 		"picocolors": "^1.1.1"
+	},
+	"devDependencies": {
+		"@types/pg": "^8.11.10",
+		"drizzle-kit": "^0.30.2"
 	}
 }

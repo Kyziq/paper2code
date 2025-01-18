@@ -39,7 +39,6 @@ export async function verifyGoogleToken(
 			email: payload.email ?? "",
 			name: payload.name ?? "",
 			picture: payload.picture ?? "",
-			locale: payload.locale ?? "en",
 		};
 
 		logger.success(`Successfully processed user data for: ${user.email}`);

@@ -6,6 +6,8 @@ import {
 	enhanceRoute,
 	executeRoute,
 	ocrRoute,
+	snippetsRoute,
+	usersRoute,
 } from "~/routes";
 import { ApiError } from "~/utils/errors";
 import { logger } from "~/utils/logger";
@@ -17,6 +19,8 @@ export const app = new Elysia()
 	.use(executeRoute)
 	.use(enhanceRoute)
 	.use(detectLanguageRoute)
+	.use(snippetsRoute)
+	.use(usersRoute)
 	.onError(({ error, set }) => {
 		if (error instanceof ApiError) {
 			set.status = error.statusCode;
