@@ -3,12 +3,14 @@ name: paper2code
 services:
 
   db:
-      image: postgres:15
+      image: postgres:17
       container_name: paper2code_db
+      env_file:
+        - ./apps/server/.env
       environment:
-        - POSTGRES_DB=paper2code
-        - POSTGRES_USER=your_username  # Change this
-        - POSTGRES_PASSWORD=your_password  # Change this
+        - POSTGRES_DB=${POSTGRES_DB}
+        - POSTGRES_USER=${POSTGRES_USER}
+        - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       volumes:
         - type: volume
           source: postgres_data
