@@ -5,10 +5,12 @@ import {
 	Loader2,
 	Pencil,
 	RotateCcw,
+	Save,
 	Terminal,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {
@@ -68,6 +70,7 @@ export const Console = ({
 		EditorView.lineWrapping,
 	]);
 	const [isLoadingLanguage, setIsLoadingLanguage] = useState(false);
+	const [isSaving, setIsSaving] = useState(false);
 
 	// Handle language support loading
 	useEffect(() => {
@@ -143,6 +146,25 @@ export const Console = ({
 
 	const handleReset = () => {
 		setEditableCode(ocrResult || "");
+	};
+
+	const handleSave = async () => {
+		if (!language || !ocrResult) {
+			toast.error("Missing code or language");
+			return;
+		}
+
+		setIsSaving(true);
+		try {
+			// TODO: implement the actual save API call later
+			await new Promise((resolve) => setTimeout(resolve, 1000)); // Mock API call
+			toast.success("Code execution saved successfully");
+		} catch (error) {
+			toast.error("Failed to save code execution");
+			console.error("Save error:", error);
+		} finally {
+			setIsSaving(false);
+		}
 	};
 
 	const renderOriginalFile = () => {
@@ -405,10 +427,8 @@ export const Console = ({
 						</div>
 					</div>
 
-					<motion.div
-						className="flex items-center gap-2"
-						whileHover={{ scale: 1.02 }}
-					>
+					<div className="flex items-center gap-2">
+						{/* Edit button */}
 						<Button
 							size="icon"
 							variant="ghost"
@@ -422,7 +442,26 @@ export const Console = ({
 						>
 							<Pencil className="h-4 w-4" />
 						</Button>
-					</motion.div>
+
+						{/* Save button */}
+						<Button
+							size="icon"
+							variant="ghost"
+							className={`h-8 w-8 rounded-full transition-all duration-300 ${
+								isProcessing || isSaving
+									? "bg-blue-500/20 text-blue-400 shadow-lg shadow-blue-500/20"
+									: "bg-zinc-700/50 hover:bg-zinc-700 hover:shadow-lg"
+							}`}
+							onClick={handleSave}
+							disabled={isProcessing || isSaving || !message}
+						>
+							{isSaving ? (
+								<Loader2 className="h-4 w-4 animate-spin" />
+							) : (
+								<Save className="h-4 w-4" />
+							)}
+						</Button>
+					</div>
 				</motion.div>
 
 				<div
