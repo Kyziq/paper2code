@@ -3,19 +3,42 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/logo.svg" />
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#1e293b" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+
+    <!-- Default meta tags (will be overridden by Helmet) -->
     <title>paper2code</title>
+    <meta name="description" content="Convert your handwritten code into executable programs. Supporting Python, C++, and Java with instant code execution and syntax enhancement." />
+
+    <!-- Preconnect to important third-party domains -->
+    <link rel="preconnect" href="https://accounts.google.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <!-- PWA related tags -->
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    <!-- Preload critical assets -->
+    <link rel="preload" href="/assets/fonts/CaskaydiaCoveNerdFont-Regular.ttf" as="font" type="font/ttf" crossorigin />
+
     <!-- Google tag (gtag.js) - Google Analytics  -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-03SRLCDNCW"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-03SRLCDNCW');
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      gtag("js", new Date());
+      gtag("config", "G-03SRLCDNCW");
     </script>
   </head>
+
   <body>
     <div id="root"></div>
+    <noscript>You need to enable JavaScript to run this application.</noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

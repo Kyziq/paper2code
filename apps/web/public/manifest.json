@@ -1,0 +1,34 @@
+{
+	"name": "paper2code",
+	"short_name": "paper2code",
+	"description": "Convert handwritten code into executable programs",
+	"start_url": "/",
+	"display": "standalone",
+	"background_color": "#1e293b",
+	"theme_color": "#1e293b",
+	"orientation": "portrait-primary",
+	"icons": [
+		{
+			"src": "/apple-touch-icon.png",
+			"type": "image/png",
+			"sizes": "180x180",
+			"purpose": "any maskable"
+		}
+	],
+	"shortcuts": [
+		{
+			"name": "Upload Code",
+			"short_name": "Upload",
+			"description": "Upload handwritten code",
+			"url": "/app",
+			"icons": [{ "src": "/apple-touch-icon.png", "sizes": "180x180" }]
+		},
+		{
+			"name": "Code Snippets",
+			"short_name": "Snippets",
+			"description": "View saved code snippets",
+			"url": "/app/snippets",
+			"icons": [{ "src": "/apple-touch-icon.png", "sizes": "180x180" }]
+		}
+	]
+}
