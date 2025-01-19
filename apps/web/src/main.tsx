@@ -10,6 +10,7 @@ import { useAuthStore } from "~/stores/useAuthStore";
 
 // Import the generated route tree
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { HelmetProvider } from "react-helmet-async";
 import { routeTree } from "~/routeTree.gen";
 
 // Create a new router instance
@@ -40,23 +41,25 @@ function App() {
 
 	return (
 		<React.StrictMode>
-			<QueryClientProvider client={queryClient}>
-				<RouterProvider
-					router={router}
-					context={{
-						auth: {
-							user,
-							isAuthenticated,
-						},
-					}}
-				/>
-				<Toaster
-					position="bottom-right"
-					richColors
-					closeButton
-					duration={5000}
-				/>
-			</QueryClientProvider>
+			<HelmetProvider>
+				<QueryClientProvider client={queryClient}>
+					<RouterProvider
+						router={router}
+						context={{
+							auth: {
+								user,
+								isAuthenticated,
+							},
+						}}
+					/>
+					<Toaster
+						position="bottom-right"
+						richColors
+						closeButton
+						duration={5000}
+					/>
+				</QueryClientProvider>
+			</HelmetProvider>
 		</React.StrictMode>
 	);
 }

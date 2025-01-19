@@ -1,4 +1,5 @@
 import { Navigate, createLazyFileRoute } from "@tanstack/react-router";
+import { SEO } from "~/components/SEO";
 import { GoogleAuthButton } from "~/components/google-auth-button";
 import { useAuthStore } from "~/stores/useAuthStore";
 
@@ -11,6 +12,7 @@ function RouteComponent() {
 
 	return (
 		<main className="flex-grow relative">
+			<SEO />
 			{isAuthenticated ? (
 				<Navigate to="/app" />
 			) : (
