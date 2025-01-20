@@ -6,10 +6,8 @@ export interface DetectLanguageParams {
 }
 
 export interface DetectLanguageResponseData {
-	language: SupportedLanguage | null; // For supported languages (python, cpp, java)
-	detectedLanguage: string; // The actual detected language (e.g., javascript, python, etc.)
-	isSupported: boolean; // Whether the detected language is supported
-	confidence: number; // Confidence score of detection
+	language: SupportedLanguage | null; // null indicates unsupported language
+	confidence: number;
 }
 
 export type DetectLanguageResponse = ApiResponse<DetectLanguageResponseData>;

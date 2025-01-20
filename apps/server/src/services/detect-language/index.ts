@@ -1,6 +1,7 @@
 import Groq from "groq-sdk";
 import { logger } from "~/utils/logger";
 import { SUPPORTED_LANGUAGES, type SupportedLanguage } from "~shared/constants";
+import type { DetectLanguageResponseData } from "~shared/types/detect-language";
 
 const groq = new Groq({
 	apiKey: Bun.env.GROQ_API_KEY,
@@ -11,22 +12,27 @@ const buildPrompt = (code: string): string => {
 		", ",
 	);
 
-	return `As an expert in programming language detection, analyze the following code and determine which language it is written in. Our supported languages are: ${supportedLanguages}.
+	return `As an expert in programming language detection, analyze the following code and determine which language it is written in. Only respond with the supported languages: ${supportedLanguages}.
 
 Code to analyze:
 ${code}
 
 Provide your response in this exact JSON format:
 {
-  "detectedLanguage": "language_name",
+  "language": "language",
   "confidence": confidence_score
 }
 
 Where:
-- detectedLanguage is the actual detected language (e.g., "javascript", "python", "dart", etc.)
+- language should be EXACTLY one of: ${supportedLanguages}, or another detected language name in lowercase
 - confidence score is between 0 and 1
 
-Example: {"detectedLanguage": "javascript", "confidence": 0.95}`;
+Response examples:
+{"language": "python", "confidence": 0.95}
+{"language": "javascript", "confidence": 0.90}  // even though javascript isn't supported, still indicate what was detected
+{"language": "unknown", "confidence": 0}  // when can't detect the language
+
+The response MUST be valid JSON with these exact field names and format.`;
 };
 
 const makeGroqRequest = async (prompt: string) => {
@@ -39,51 +45,49 @@ const makeGroqRequest = async (prompt: string) => {
 	});
 };
 
-const processResponse = (result: string | undefined) => {
+const processResponse = (
+	result: string | undefined,
+): DetectLanguageResponseData => {
 	if (!result) {
 		logger.error("No response received from Groq AI");
 		return {
 			language: null,
-			detectedLanguage: "unknown",
-			isSupported: false,
 			confidence: 0,
 		};
 	}
 
 	try {
 		const detection = JSON.parse(result) as {
-			detectedLanguage: string;
+			language: string;
 			confidence: number;
 		};
-
+		logger.info(`Raw language detection result: ${JSON.stringify(detection)}`);
 		// Convert to lowercase for comparison
-		const detectedLang = detection.detectedLanguage.toLowerCase();
-
+		const detectedLang = detection.language.toLowerCase();
 		// Check if the detected language is supported
-		const isSupported = SUPPORTED_LANGUAGES.some(
+		const supportedLang = SUPPORTED_LANGUAGES.find(
 			(lang) => lang.value === detectedLang,
 		);
 
 		logger.info(
 			`Language detection result: ${JSON.stringify({
-				detected: detectedLang,
-				isSupported,
+				language: supportedLang
+					? (supportedLang.value as SupportedLanguage)
+					: null,
 				confidence: detection.confidence,
 			})}`,
 		);
 
 		return {
-			language: isSupported ? (detectedLang as SupportedLanguage) : null,
-			detectedLanguage: detectedLang,
-			isSupported,
+			language: supportedLang
+				? (supportedLang.value as SupportedLanguage)
+				: null,
 			confidence: detection.confidence,
 		};
 	} catch (error) {
 		logger.error(`Error parsing language detection response: ${error}`);
 		return {
 			language: null,
-			detectedLanguage: "unknown",
-			isSupported: false,
 			confidence: 0,
 		};
 	}
@@ -94,6 +98,7 @@ export async function detectLanguage(code: string) {
 		const prompt = buildPrompt(code);
 		const completion = await makeGroqRequest(prompt);
 		const result = completion.choices[0]?.message?.content ?? undefined;
+
 		return processResponse(result);
 	} catch (error) {
 		logger.error(`Error in language detection: ${error}`);

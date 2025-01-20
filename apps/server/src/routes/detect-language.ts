@@ -26,12 +26,7 @@ export const detectLanguageRoute = new Elysia().post(
 				message: result.language
 					? "Language detection successful"
 					: "Could not confidently detect programming language",
-				data: {
-					language: result.language,
-					detectedLanguage: result.detectedLanguage,
-					isSupported: result.isSupported,
-					confidence: result.confidence,
-				},
+				data: result,
 			};
 		} catch (error) {
 			logger.error(`Language detection failed: ${error}`);
@@ -53,7 +48,6 @@ export const detectLanguageRoute = new Elysia().post(
 						t.Null(),
 					]),
 					confidence: t.Number(),
-					detectedLanguage: t.String(),
 				}),
 			),
 		}),
