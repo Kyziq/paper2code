@@ -18,7 +18,7 @@ export async function processImage(fileName: string): Promise<string> {
 		}
 
 		const text = result.fullTextAnnotation.text.trim();
-		logger.detailedOCR(result.fullTextAnnotation, "image");
+		// logger.detailedOCR(result.fullTextAnnotation, "image");
 
 		return text;
 	} catch (error) {

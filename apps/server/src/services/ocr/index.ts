@@ -1,10 +1,5 @@
 import { logger } from "~/utils/logger";
-import {
-	createBucketIfNotExists,
-	deleteGCSFile,
-	getPublicUrl,
-	uploadGCSFile,
-} from "~/utils/storage";
+import { deleteGCSFile, getPublicUrl, uploadGCSFile } from "~/utils/storage";
 import type { SupportedLanguage } from "~shared/constants";
 import { processImage } from "./handlers/image";
 import { processPDF } from "./handlers/pdf";
@@ -66,8 +61,6 @@ export async function processOCR(
 			fileUrl: testData.fileUrl, // Base64 encoded SVG
 		};
 	}
-
-	await createBucketIfNotExists();
 
 	// Upload file and get unique filename
 	const { uniqueFileName } = await uploadGCSFile(file);
