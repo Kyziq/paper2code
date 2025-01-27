@@ -5,7 +5,7 @@ paper2code is a full-stack web application that converts handwritten code from i
 ## Features
 
 - **OCR Code Recognition**: Extract code from handwritten images and PDFs
-- **Multi-Language Support**:
+- **Multi-Language Support with Language Detection**:
   - Python
   - Java
   - C++
@@ -23,6 +23,8 @@ paper2code is a full-stack web application that converts handwritten code from i
 - **Storage**: Google Cloud Storage
 - **Code Execution**: Docker containers
 - **AI Enhancement**: Groq API
+- **Database**: PostgreSQL with DrizzleORM
+- **Testing**: Bun Test Runner
 
 ### Frontend (Web)
 
@@ -30,12 +32,9 @@ paper2code is a full-stack web application that converts handwritten code from i
 - **Routing**: TanStack Router
 - **State Management**: Zustand
 - **Data Fetching/Caching**: TanStack Query
-- **UI Components**:
-  - Radix UI
-  - Tailwind CSS
-  - shadcn/ui
+- **User Interface**: Tailwind CSS with shadcn/ui
 - **Code Editor**: CodeMirror
-- **Animation**: Motion One
+- **Animation**: Motion
 
 ## Project Structure
 
@@ -62,7 +61,7 @@ paper2code/
 ## Prerequisites
 
 - Node.js (v18 or higher)
-- Bun runtime
+- Bun
 - Docker
 - Google Cloud Platform account with Vision API enabled
 - Groq API account
